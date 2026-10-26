@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "This promo code has expired." }, { status: 400 });
   }
   
-  if (promo.maxUses > 0 && promo.currentUses >= promo.maxUses) {
+  // Fixed: Added fallback || 0 to prevent TypeScript null errors
+  if ((promo.maxUses || 0) > 0 && (promo.currentUses || 0) >= (promo.maxUses || 0)) {
     return NextResponse.json({ error: "This promo code has reached its usage limit." }, { status: 400 });
   }
 
