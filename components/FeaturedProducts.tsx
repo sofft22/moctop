@@ -13,19 +13,34 @@ export function FeaturedProducts({ onProductClick }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/products").then(res => res.json()).then(data => {
-      // Filter products that are featured and in stock
-      const featured = data.filter((p: any) => p.featured === 1 && p.inStock === 1);
-      
-      // We only need a maximum of 6 items to display
-      setFeaturedItems(featured.slice(0, 6));
-      setLoading(false);
-    });
+    // 1. Instantly load from localStorage (0ms delay for returning users)
+    const cached = localStorage.getItem("mocktopia_products_cache");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        const featured = parsed.filter((p: any) => p.featured === 1 && p.inStock === 1);
+        setFeaturedItems(featured.slice(0, 6));
+        setLoading(false);
+      } catch (e) {
+        console.error("Failed to parse cache");
+      }
+    }
+
+    // 2. Fetch fresh data in the background
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        const featured = data.filter((p: any) => p.featured === 1 && p.inStock === 1);
+        setFeaturedItems(featured.slice(0, 6));
+        setLoading(false);
+        
+        // Save to cache for the next visit
+        localStorage.setItem("mocktopia_products_cache", JSON.stringify(data));
+      });
   }, []);
 
-  if (loading) return null; // Hide section while loading
+  if (loading) return null; 
 
-  // If no products are marked as featured, hide the whole section
   if (featuredItems.length === 0) return null;
 
   return (
@@ -53,23 +68,20 @@ export function FeaturedProducts({ onProductClick }: Props) {
           </Link>
         </div>
 
-        {/* 
-          GRID LOGIC:
-          - Mobile: 2 columns
-          - Tablet: 3 columns (3x2 grid with 6 items)
-          - Desktop: 4 columns (hides items 5 & 6 using lg:hidden)
-        */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-5 lg:gap-x-5 lg:gap-y-14">
           {featuredItems.map((item, idx) => (
             <div 
               key={item.id} 
-              className={`${idx >= 4 ? "lg:hidden" : "block"} rounded-md overflow-hidden`} // Subtle radius applied here
+              // Increased border radius from rounded-md to rounded-xl
+              className={`${idx >= 4 ? "lg:hidden" : "block"} rounded-xl overflow-hidden group cursor-pointer`} 
               onClick={() => onProductClick(item)} 
             >
               <ProductCard 
                 product={{
                   ...item,
-                  price: `₦${item.price.toLocaleString()}`,
+                  // Price styling exactly like the modal: light weight but bold
+                  price: `₦${item.price.toLocaleString()}`, 
+                  priceClassName: "font-bold text-[13px] text-[#2C1A1D]/70 font-montserrat",
                   sizes: JSON.parse(item.sizes)
                 }} 
                 priority={idx < 2}
