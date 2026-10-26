@@ -5,7 +5,7 @@ import { useEffect } from "react";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  type: "terms" | "privacy" | "refunds" | "allergens" | null;
+  type: "terms" | "privacy" | "refunds" | "allergens" | "delivery" | null;
 }
 
 export function LegalModal({ isOpen, onClose, type }: Props) {
@@ -61,6 +61,18 @@ export function LegalModal({ isOpen, onClose, type }: Props) {
           <p><strong>Important Notice:</strong> Our products are made in a kitchen that handles <strong>cereals containing gluten, milk, eggs, and nuts.</strong></p>
           <p>While we take precautions, we cannot guarantee a completely allergen-free environment. Cross-contamination is possible.</p>
           <p>If you have a severe allergy, please contact us before ordering to discuss your specific requirements.</p>
+        </>
+      )
+    },
+    delivery: {
+      title: "Delivery Policy",
+      body: (
+        <>
+          <p><strong>1. Delivery Areas & Fees:</strong> We deliver to specific postcodes within the UK. Delivery fees vary based on your location and are clearly calculated at checkout before you pay.</p>
+          <p><strong>2. Timeframes:</strong> Because our goods are baked fresh, orders are typically delivered within 1-2 business days. You will receive a notification when your order is on its way.</p>
+          <p><strong>3. Missed Deliveries:</strong> If you are not available to receive your order, we will attempt to leave it in a safe place. However, <strong>we are not responsible for perishable goods spoiling once they have been left at the delivery address.</strong> Please ensure someone is available to receive the bakes.</p>
+          <p><strong>4. Incorrect Addresses:</strong> We cannot offer refunds or replacements for orders delivered to an incorrect address provided by the customer at checkout.</p>
+          <p><strong>5. Third-Party Couriers:</strong> We may use third-party couriers for delivery. Once your order is handed to the courier, you will receive tracking information where applicable.</p>
         </>
       )
     }
