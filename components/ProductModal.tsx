@@ -106,29 +106,30 @@ export function ProductModal({ product, onClose }: Props) {
       <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8" onClick={onClose}>
         <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[1100px] md:rounded-lg overflow-hidden">
           
-          {/* HEADER */}
-          <header className="relative z-20 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5] shrink-0">
-            <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
-              <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
-              </button>
-              <span className="uppercase tracking-[0.15em] text-[#2C1A1D] text-[16px] font-semibold" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>Mocktopia</span>
-              <button onClick={() => setIsCartOpen(true)} className="relative text-[#2C1A1D]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>
-                {cartCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#2C1A1D] text-[9px] text-white">{cartCount}</span>}
-              </button>
-            </div>
-          </header>
-
-          {/* SCROLLABLE BODY */}
-          <div className="flex w-full flex-1 overflow-y-auto overscroll-contain">
+          {/* SCROLLABLE CONTAINER (Header is INSIDE so it scrolls away) */}
+          <div className="flex w-full flex-1 flex-col overflow-y-auto overscroll-contain">
             
+            {/* 1. HEADER (Not sticky) */}
+            <header className="relative z-10 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5]">
+              <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
+                <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+                <span className="uppercase tracking-[0.15em] text-[#2C1A1D] text-[16px] font-semibold" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>Mocktopia</span>
+                <button onClick={() => setIsCartOpen(true)} className="relative text-[#2C1A1D]">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>
+                  {cartCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#2C1A1D] text-[9px] text-white">{cartCount}</span>}
+                </button>
+              </div>
+            </header>
+
+            {/* 2. BODY */}
             <div className="flex w-full flex-col md:flex-row">
               
               {/* LEFT COLUMN: Image & Related */}
               <div className="w-full md:w-1/2 shrink-0 flex flex-col bg-[#EBE0D3]">
                 
-                {/* Main Image (Taller, no overlay) */}
+                {/* Main Image */}
                 <div className="relative w-full h-[60vh] sm:h-[600px]">
                   <div className="relative w-full h-full cursor-zoom-in" onClick={() => setIsLightboxOpen(true)}>
                     {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
@@ -179,7 +180,7 @@ export function ProductModal({ product, onClose }: Props) {
                 
                 <hr className="mb-8 border-[#2C1A1D]/10" />
 
-                {/* Sizes (Slimmer and Smarter) */}
+                {/* Sizes (60% Chocolate) */}
                 {sizes.length > 0 && (
                   <div className="mb-8">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Select Size</p>
@@ -188,7 +189,7 @@ export function ProductModal({ product, onClose }: Props) {
                         <button 
                           key={size} 
                           onClick={() => setSelectedSize(size)} 
-                          className={`flex h-[44px] items-center justify-center px-4 text-[10px] font-bold uppercase tracking-wide transition-all border rounded-md ${selectedSize === size ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5"}`} 
+                          className={`flex h-[44px] items-center justify-center px-4 text-[10px] font-bold uppercase tracking-wide transition-all border rounded-md ${selectedSize === size ? "bg-[#2C1A1D]/60 border-[#2C1A1D]/60 text-[#FBF9F5]" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5"}`} 
                           style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
                         >
                           {size}
