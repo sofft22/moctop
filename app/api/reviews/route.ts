@@ -5,7 +5,7 @@ import { desc, eq } from "drizzle-orm";
 
 // GET all reviews
 export async function GET() {
-  const db = getDb(process.env);
+  const db = getDb();
   const allReviews = await db.select().from(reviews).orderBy(desc(reviews.date));
   return NextResponse.json(allReviews);
 }
@@ -13,7 +13,7 @@ export async function GET() {
 // POST new review
 export async function POST(request: Request) {
   const body = await request.json();
-  const db = getDb(process.env);
+  const db = getDb();
   
   await db.insert(reviews).values({
     id: `rev-${Date.now()}`,
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 // PUT approve/unapprove review
 export async function PUT(request: Request) {
   const body = await request.json();
-  const db = getDb(process.env);
+ const db = getDb();
   
   await db.update(reviews)
     .set({ approved: body.approved ? 1 : 0 })
@@ -46,7 +46,7 @@ export async function DELETE(request: Request) {
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
 
-  const db = getDb(process.env);
+  const db = getDb();
   await db.delete(reviews).where(eq(reviews.id, id));
   
   return NextResponse.json({ success: true });
