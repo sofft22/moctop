@@ -18,9 +18,6 @@ export function ProductModal({ product, onClose }: Props) {
   const [mainImgLoaded, setMainImgLoaded] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   
-  // Header Visibility State
-  const [showHeader, setShowHeader] = useState(false);
-
   // Reviews State
   const [reviews, setReviews] = useState<any[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -28,7 +25,7 @@ export function ProductModal({ product, onClose }: Props) {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
 
-  // Related Products State
+  // Frequently Bought Together State
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
 
   // Toggle State
@@ -43,7 +40,6 @@ export function ProductModal({ product, onClose }: Props) {
       setQty(1);
       setMainImgLoaded(false);
       setAddedFlash(false);
-      setShowHeader(false); // Reset header on new product
       setIsLightboxOpen(false);
       setShowReviewForm(false);
       
@@ -80,15 +76,11 @@ export function ProductModal({ product, onClose }: Props) {
   const handleAdd = () => {
     addToCart(product, selectedSize, qty); 
     setAddedFlash(true);
-    setShowHeader(true); // Reveal header on add to cart
-    setTimeout(() => {
-      setAddedFlash(false);
-      // We leave the header visible after adding, so they can check out.
-    }, 2000);
+    setTimeout(() => setAddedFlash(false), 2000);
   };
 
   const handleBulkQuote = () => {
-    const message = `Hi! I'd like to request a bulk quote for:%0A%0A*Product:* ${product.title}%0A*Size:* ${selectedSize}%0A%0APlease let me know the pricing and availability.`;
+    const message = `Hi Mocktopia! I'd like to request a bulk quote for:%0A%0A*Product:* ${product.title}%0A*Size:* ${selectedSize}%0A%0APlease let me know the pricing and availability.`;
     window.open(`https://wa.me/2348178910628?text=${message}`, '_blank');
   };
 
@@ -109,7 +101,7 @@ export function ProductModal({ product, onClose }: Props) {
     alert("Thank you! Your review has been submitted and is pending approval.");
   };
 
-  // Share Logic
+  // Dynamic Share Logic
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}?product=${product.id}` : "";
   
   const copyToClipboard = () => {
@@ -119,33 +111,33 @@ export function ProductModal({ product, onClose }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8 lg:p-12" onClick={onClose}>
-        
-        {/* MODAL CONTAINER: Reduced width (max-w-[950px]) and tightened height */}
+      <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8" onClick={onClose}>
+        {/* Reduced desktop size to max-w-[950px] */}
         <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[950px] md:rounded-lg overflow-hidden">
           
-          {/* HEADER (Conditionally rendered based on showHeader state) */}
-          <header className={`relative z-20 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5] transition-all duration-300 ${showHeader ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full absolute pointer-events-none"}`}>
-            <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
-              <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
-              </button>
-              <span className="uppercase tracking-[0.15em] text-[#2C1A1D] text-[16px] font-semibold" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>Mocktopia</span>
-              <button onClick={() => setIsCartOpen(true)} className="relative text-[#2C1A1D]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>
-                {cartCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#2C1A1D] text-[9px] text-white">{cartCount}</span>}
-              </button>
-            </div>
-          </header>
-
-          {/* SCROLLABLE BODY */}
-          <div className="flex w-full flex-1 overflow-y-auto overscroll-contain">
+          {/* SCROLLABLE CONTAINER */}
+          <div className="flex w-full flex-1 flex-col overflow-y-auto overscroll-contain">
             
-            <div className="flex w-full flex-col md:flex-row">
+            {/* 1. HEADER (Restored, not sticky) */}
+            <header className="relative z-10 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5]">
+              <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
+                <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+                <span className="uppercase tracking-[0.15em] text-[#2C1A1D] text-[16px] font-semibold" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>Mocktopia</span>
+                <button onClick={() => setIsCartOpen(true)} className="relative text-[#2C1A1D]">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>
+                  {cartCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#2C1A1D] text-[9px] text-white">{cartCount}</span>}
+                </button>
+              </div>
+            </header>
+
+            {/* 2. TOP SECTION (Image Left, Details Right) */}
+            <div className="flex w-full flex-col md:flex-row border-b border-[#2C1A1D]/10">
               
               {/* LEFT COLUMN: Image */}
               <div className="w-full md:w-1/2 shrink-0 flex flex-col bg-[#EBE0D3]">
-                <div className="relative w-full h-[50vh] sm:h-[500px] lg:h-[600px]">
+                <div className="relative w-full h-[50vh] sm:h-[550px]">
                   <div className="relative w-full h-full cursor-zoom-in" onClick={() => setIsLightboxOpen(true)}>
                     {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
                     <Image src={activeImage} alt={product.title} fill className="object-cover" onLoad={() => setMainImgLoaded(true)} priority />
@@ -162,11 +154,10 @@ export function ProductModal({ product, onClose }: Props) {
                 )}
               </div>
 
-              {/* RIGHT COLUMN: Details, CTA, Related, & Reviews (Spaced beautifully) */}
-              <div className="w-full md:w-1/2 flex flex-col p-6 md:p-10">
-                
+              {/* RIGHT COLUMN: Details */}
+              <div className="w-full md:w-1/2 flex flex-col p-6 md:p-8">
                 <div className="mb-6">
-                  <h2 className="text-[28px] leading-tight text-[#2C1A1D] md:text-[36px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>{product.title}</h2>
+                  <h2 className="text-[28px] leading-tight text-[#2C1A1D] md:text-[32px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>{product.title}</h2>
                   <p className="mt-2 text-[18px] font-semibold text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{product.price.toLocaleString()}</p>
                 </div>
 
@@ -174,7 +165,7 @@ export function ProductModal({ product, onClose }: Props) {
                 
                 <hr className="mb-8 border-[#2C1A1D]/10" />
 
-                {/* Sizes: 3 per row Grid */}
+                {/* Sizes (3 per row) */}
                 {sizes.length > 0 && (
                   <div className="mb-8">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Select Size</p>
@@ -193,7 +184,7 @@ export function ProductModal({ product, onClose }: Props) {
                   </div>
                 )}
 
-                {/* Add to Cart Section */}
+                {/* CTAs */}
                 <div className="flex flex-col gap-4 mb-8">
                   <div className="flex items-center gap-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
@@ -215,84 +206,93 @@ export function ProductModal({ product, onClose }: Props) {
                   )}
                 </div>
 
-                {/* Restored Share & Copy Icons */}
-                <div className="flex items-center gap-4 mb-10">
+                {/* Share Section (Exact Icons) */}
+                <div className="flex items-center gap-4 mt-2">
                   <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Share</p>
                   <div className="flex gap-2">
-                    <a href={`https://wa.me/?text=Check out this product: ${shareUrl}`} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-md border border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
+                    <a href={`https://wa.me/?text=Check out this product: ${shareUrl}`} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-md border border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5 transition-colors">
+                      {/* Exact WhatsApp Icon */}
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+                        <path d="M17.498 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      </svg>
                     </a>
-                    <button onClick={copyToClipboard} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <button onClick={copyToClipboard} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5 transition-colors">
+                      {/* Exact Copy Icon */}
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                      </svg>
                     </button>
                   </div>
-                </div>
-
-                <hr className="mb-10 border-[#2C1A1D]/10" />
-
-                {/* Complete the Look / Frequently Bought Together (Properly contained inside the column now) */}
-                {relatedProducts.length > 0 && (
-                  <div className="mb-10">
-                    <h3 className="mb-4 text-[20px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
-                      Complete the look
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {relatedProducts.map((p) => (
-                        <div key={p.id} className="group cursor-pointer">
-                          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-sm bg-[#EBE0D3] mb-2">
-                            <Image src={p.image} alt={p.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                          </div>
-                          <p className="text-[11px] font-semibold text-[#2C1A1D] truncate" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{p.title}</p>
-                          <p className="text-[10px] text-[#2C1A1D]/60">£{p.price.toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Reviews (Properly contained inside the column now) */}
-                <div>
-                  <h3 className="mb-6 text-[22px] font-normal text-[#2C1A1D] md:text-[26px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Reviews</h3>
-                  
-                  {reviews.length === 0 ? (
-                    <p className="text-[13px] text-[#2C1A1D]/50 mb-6">No reviews yet. Be the first to review this item.</p>
-                  ) : (
-                    <div className="flex flex-col gap-5 mb-6">
-                      {reviews.map(r => (
-                        <div key={r.id} className="bg-white p-4 rounded-md border border-[#2C1A1D]/5">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-[12px] font-bold text-[#2C1A1D]">{r.customerName}</p>
-                            <span className="text-[11px] text-[#2C1A1D]">{"★".repeat(r.rating)}</span>
-                          </div>
-                          <p className="text-[13px] text-[#2C1A1D]/70">"{r.comment}"</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!showReviewForm ? (
-                    <button onClick={() => setShowReviewForm(true)} className="w-full rounded-md border border-[#2C1A1D] py-2.5 text-[10px] font-bold uppercase tracking-widest text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                      Write a Review
-                    </button>
-                  ) : (
-                    <form onSubmit={handleReviewSubmit} className="flex flex-col gap-3 bg-white p-4 rounded-md border border-[#2C1A1D]/10">
-                      <input value={reviewName} onChange={e => setReviewName(e.target.value)} placeholder="Your Name" required className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
-                      <div className="flex items-center gap-2">
-                        <span className="text-[12px] text-[#2C1A1D]/60">Rating:</span>
-                        {[1,2,3,4,5].map(star => (
-                          <button type="button" key={star} onClick={() => setReviewRating(star)} className={`text-[16px] ${star <= reviewRating ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`}>★</button>
-                        ))}
-                      </div>
-                      <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Your review..." required rows={3} className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
-                      <div className="flex gap-2">
-                        <button type="submit" className="flex-1 bg-[#2C1A1D] text-white text-[11px] font-bold uppercase rounded py-2">Submit</button>
-                        <button type="button" onClick={() => setShowReviewForm(false)} className="px-4 text-[11px] font-bold uppercase text-[#2C1A1D]/50">Cancel</button>
-                      </div>
-                    </form>
-                  )}
                 </div>
               </div>
             </div>
+
+            {/* 3. BOTTOM SECTION (Full Width) */}
+            <div className="w-full bg-[#FBF9F5] p-6 md:p-10">
+              
+              {/* Frequently Bought Together */}
+              {relatedProducts.length > 0 && (
+                <div className="mb-12">
+                  <h3 className="mb-4 text-[24px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+                    Complete the look
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {relatedProducts.map((p) => (
+                      <div key={p.id} className="group cursor-pointer">
+                        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-sm bg-[#EBE0D3] mb-2">
+                          <Image src={p.image} alt={p.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                        </div>
+                        <p className="text-[12px] font-semibold text-[#2C1A1D] truncate" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{p.title}</p>
+                        <p className="text-[11px] text-[#2C1A1D]/60">£{p.price.toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Reviews */}
+              <div>
+                <h3 className="mb-6 text-[24px] font-normal text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Reviews</h3>
+                
+                {reviews.length === 0 ? (
+                  <p className="text-[13px] text-[#2C1A1D]/50 mb-6">No reviews yet. Be the first to review this item.</p>
+                ) : (
+                  <div className="flex flex-col gap-5 mb-6">
+                    {reviews.map(r => (
+                      <div key={r.id} className="bg-white p-4 rounded-md border border-[#2C1A1D]/5">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[12px] font-bold text-[#2C1A1D]">{r.customerName}</p>
+                          <span className="text-[11px] text-[#2C1A1D]">{"★".repeat(r.rating)}</span>
+                        </div>
+                        <p className="text-[13px] text-[#2C1A1D]/70">"{r.comment}"</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!showReviewForm ? (
+                  <button onClick={() => setShowReviewForm(true)} className="rounded-md border border-[#2C1A1D] px-8 py-2.5 text-[10px] font-bold uppercase tracking-widest text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                    Write a Review
+                  </button>
+                ) : (
+                  <form onSubmit={handleReviewSubmit} className="flex flex-col gap-3 bg-white p-4 rounded-md border border-[#2C1A1D]/10 max-w-xl">
+                    <input value={reviewName} onChange={e => setReviewName(e.target.value)} placeholder="Your Name" required className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] text-[#2C1A1D]/60">Rating:</span>
+                      {[1,2,3,4,5].map(star => (
+                        <button type="button" key={star} onClick={() => setReviewRating(star)} className={`text-[16px] ${star <= reviewRating ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`}>★</button>
+                      ))}
+                    </div>
+                    <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Your review..." required rows={3} className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
+                    <div className="flex gap-2">
+                      <button type="submit" className="flex-1 bg-[#2C1A1D] text-white text-[11px] font-bold uppercase rounded py-2">Submit</button>
+                      <button type="button" onClick={() => setShowReviewForm(false)} className="px-4 text-[11px] font-bold uppercase text-[#2C1A1D]/50">Cancel</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
