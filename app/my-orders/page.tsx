@@ -11,7 +11,8 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   
-  // Reference to the receipt we want to print
+  // Reference to the specific receipt being downloaded
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,31 +27,46 @@ export default function MyOrdersPage() {
   }, []);
 
   const handleDownloadReceipt = async (order: any) => {
-    if (!receiptRef.current) return;
+    setDownloadingOrderId(order.id);
+    
+    // Wait a tiny bit for React to attach the ref to the DOM before capturing
+    setTimeout(async () => {
+      if (!receiptRef.current) {
+        setDownloadingOrderId(null);
+        return;
+      }
 
-    try {
-      const canvas = await html2canvas(receiptRef.current, {
-        scale: 2, // High resolution
-        backgroundColor: "#FBF9F5",
-        useCORS: true,
-      });
+      try {
+        const canvas = await html2canvas(receiptRef.current, {
+          scale: 2, // High resolution
+          backgroundColor: "#FFFFFF",
+          useCORS: true,
+        });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const imgData = canvas.toDataURL("image/png");
+        
+        // A4 Page size in mm
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Mocktopia_Receipt_${order.id}.pdf`);
-    } catch (error) {
-      console.error("Failed to generate PDF", error);
-      alert("There was an error downloading your receipt.");
-    }
+        // Adds the image to fit the width of the A4 page
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Mocktopia_Receipt_${order.id}.pdf`);
+      } catch (error) {
+        console.error("Failed to generate PDF", error);
+        alert("There was an error downloading your receipt.");
+      } finally {
+        setDownloadingOrderId(null);
+      }
+    }, 150);
   };
 
   const getStepStatus = (orderStatus: string, stepName: string) => {
+    // Ensure we handle case differences
+    const normalizedStatus = orderStatus ? orderStatus.trim() : "Pending";
     const steps = ["Pending", "Packaged", "Delivered"];
-    const currentIndex = steps.indexOf(orderStatus);
+    const currentIndex = steps.indexOf(normalizedStatus);
     const stepIndex = steps.indexOf(stepName);
 
     if (stepIndex <= currentIndex) return "active";
@@ -64,14 +80,14 @@ export default function MyOrdersPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F5]">
       
-      {/* CHOCOLATE HEADER SECTION WITH ID="HERO" TO TRIGGER TRANSPARENCY */}
+      {/* CHOCOLATE HEADER SECTION */}
       <section id="hero" className="bg-[#2C1A1D] pt-[88px] pb-16 px-6 md:pt-[104px] md:pb-24 md:px-12">
         <div className="mx-auto max-w-[800px]">
           <h1 className="text-[36px] md:text-[48px] text-[#FBF9F5]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
             My Orders
           </h1>
           <p className="mt-2 text-[14px] text-[#FBF9F5]/60" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-            Track your order or download your receipt.
+            Track your order status and download your professional receipts.
           </p>
         </div>
       </section>
@@ -109,7 +125,7 @@ export default function MyOrdersPage() {
                       <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                         order.status === "Delivered" ? "bg-green-100 text-green-700" : "bg-[#EBE0D3] text-[#2C1A1D]"
                       }`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                        {order.status}
+                        {order.status || "Pending"}
                       </span>
                       <svg className={`w-5 h-5 text-[#2C1A1D]/40 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -128,7 +144,7 @@ export default function MyOrdersPage() {
                           <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
                           
                           {["Pending", "Packaged", "Delivered"].map((step, index) => {
-                            const status = getStepStatus(order.status, step);
+                            const status = getStepStatus(order.status || "Pending", step);
                             const isActive = status === "active";
                             return (
                               <div key={step} className="relative z-10 flex flex-col items-center gap-2">
@@ -146,76 +162,112 @@ export default function MyOrdersPage() {
                         </div>
                       </div>
 
-                      {/* Items List & Receipt Area */}
-                      <div ref={expandedOrder === order.id ? receiptRef : null} className="bg-white rounded-lg p-6 border border-[#2C1A1D]/10">
-                        
-                        {/* Receipt Branding */}
-                        <div className="text-center border-b border-[#2C1A1D]/10 pb-6 mb-6">
-                          <h2 className="text-[28px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif", fontWeight: 600, letterSpacing: "0.15em" }}>MOCKTOPIA</h2>
-                          <p className="text-[12px] text-[#2C1A1D]/50 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>Order Receipt</p>
+                      {/* RECEIPT DESIGN START */}
+                      <div 
+                        ref={downloadingOrderId === order.id ? receiptRef : null} 
+                        className="bg-white rounded-lg p-6 md:p-10 border border-[#2C1A1D]/10 max-w-[800px] mx-auto"
+                      >
+                        {/* Receipt Header */}
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#2C1A1D]/10 pb-6 mb-6 gap-4">
+                          <div>
+                            <h2 className="text-[32px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif", fontWeight: 600, letterSpacing: "0.15em" }}>MOCKTOPIA</h2>
+                            <p className="text-[12px] text-[#2C1A1D]/50 mt-1 uppercase tracking-widest" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Official Receipt</p>
+                          </div>
+                          <div className="text-left md:text-right text-[12px] text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                            <p><span className="font-bold text-[#2C1A1D]">Receipt No:</span> {order.id}</p>
+                            <p><span className="font-bold text-[#2C1A1D]">Date:</span> {new Date(order.date).toLocaleDateString()}</p>
+                            <p><span className="font-bold text-[#2C1A1D]">Status:</span> {order.status || "Pending"}</p>
+                          </div>
                         </div>
 
-                        <div className="flex justify-between text-[12px] text-[#2C1A1D]/70 mb-6" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                        {/* Customer Details */}
+                        <div className="flex flex-col md:flex-row justify-between mb-8 gap-4 text-[13px] text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
                           <div>
-                            <p>Receipt No: {order.id}</p>
-                            <p>Date: {new Date(order.date).toLocaleDateString()}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-[#2C1A1D]">{order.customerName}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#2C1A1D]/40 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Billed To:</p>
+                            <p className="font-bold text-[#2C1A1D] text-[14px]">{order.customerName}</p>
                             <p>{order.phone}</p>
-                            <p>{order.address}</p>
+                            <p className="max-w-[200px]">{order.address}</p>
+                            {order.city && <p>{order.city}, {order.state}</p>}
+                          </div>
+                          <div className="md:text-right">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#2C1A1D]/40 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Payment Method:</p>
+                            <p className="font-bold text-[#2C1A1D] uppercase">{order.paymentMethod || "N/A"}</p>
                           </div>
                         </div>
 
                         {/* Items Table */}
-                        <table className="w-full mb-6">
-                          <thead>
-                            <tr className="border-b border-[#2C1A1D]/10">
-                              <th className="text-left py-2 text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Item</th>
-                              <th className="text-center py-2 text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</th>
-                              <th className="text-right py-2 text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Price</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {items.map((item: any, i: number) => (
-                              <tr key={i} className="border-b border-[#2C1A1D]/5">
-                                <td className="py-3 text-[13px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                                  {item.title} <span className="text-[11px] text-[#2C1A1D]/50">({item.size})</span>
-                                </td>
-                                <td className="text-center py-3 text-[13px] text-[#2C1A1D]">{item.qty}</td>
-                                <td className="text-right py-3 text-[13px] text-[#2C1A1D]">£{(item.price * item.qty).toLocaleString()}</td>
+                        <div className="w-full mb-8 overflow-hidden">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b-2 border-[#2C1A1D]/10">
+                                <th className="text-left py-3 text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Item</th>
+                                <th className="text-center py-3 text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D]/60 hidden md:table-cell" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Size</th>
+                                <th className="text-center py-3 text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</th>
+                                <th className="text-right py-3 text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Price</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {items.map((item: any, i: number) => (
+                                <tr key={i} className="border-b border-[#2C1A1D]/5">
+                                  <td className="py-4">
+                                    <div className="flex items-center gap-3">
+                                      {item.image && (
+                                        <div className="relative h-12 w-12 shrink-0 rounded-md overflow-hidden border border-[#2C1A1D]/10 hidden sm:block">
+                                          <Image src={item.image} alt={item.title} fill className="object-cover" />
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-[13px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>{item.title}</p>
+                                        <p className="text-[11px] text-[#2C1A1D]/50 md:hidden">Size: {item.size}</p>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="text-center py-4 text-[13px] font-medium text-[#2C1A1D]/70 hidden md:table-cell">{item.size}</td>
+                                  <td className="text-center py-4 text-[13px] font-medium text-[#2C1A1D]/70">{item.qty}</td>
+                                  <td className="text-right py-4 text-[13px] font-bold text-[#2C1A1D]">£{(item.price * item.qty).toLocaleString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
 
                         {/* Totals */}
-                        <div className="flex flex-col items-end gap-2 border-t border-[#2C1A1D]/10 pt-4 mb-6">
-                          <div className="flex justify-between w-full max-w-[200px] text-[12px] text-[#2C1A1D]/60">
+                        <div className="flex flex-col items-end gap-3 border-t-2 border-[#2C1A1D]/10 pt-4 mb-8">
+                          <div className="flex justify-between w-full max-w-[250px] text-[13px] text-[#2C1A1D]/70">
                             <span>Subtotal:</span><span>£{order.subtotal?.toLocaleString()}</span>
                           </div>
-                          <div className="flex justify-between w-full max-w-[200px] text-[12px] text-[#2C1A1D]/60">
-                            <span>Delivery:</span><span>£{order.deliveryFee?.toLocaleString()}</span>
+                          <div className="flex justify-between w-full max-w-[250px] text-[13px] text-[#2C1A1D]/70">
+                            <span>Delivery Fee:</span><span>£{order.deliveryFee?.toLocaleString()}</span>
                           </div>
-                          <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2">
+                          <div className="flex justify-between w-full max-w-[250px] text-[18px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3">
                             <span>Total:</span><span>£{order.total?.toLocaleString()}</span>
                           </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="text-center text-[11px] text-[#2C1A1D]/50 border-t border-[#2C1A1D]/10 pt-4" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                          Thank you for shopping with Mocktopia.<br/>Baked with love.
+                        <div className="text-center text-[11px] text-[#2C1A1D]/50 border-t border-[#2C1A1D]/10 pt-6" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                          <p className="font-bold text-[#2C1A1D] mb-1">Thank you for shopping with Mocktopia.</p>
+                          <p>Baked with love. For inquiries, contact us on WhatsApp.</p>
                         </div>
                       </div>
+                      {/* RECEIPT DESIGN END */}
 
                       {/* Action Buttons */}
                       <div className="mt-6 flex justify-end gap-3">
                         <button 
                           onClick={() => handleDownloadReceipt(order)}
-                          className="rounded-md border border-[#2C1A1D] px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors"
+                          disabled={downloadingOrderId === order.id}
+                          className="rounded-md border border-[#2C1A1D] px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                           style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
                         >
-                          Download Receipt
+                          {downloadingOrderId === order.id ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                              Generating...
+                            </>
+                          ) : (
+                            "Download Receipt"
+                          )}
                         </button>
                       </div>
 
