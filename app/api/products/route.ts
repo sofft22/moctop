@@ -4,14 +4,13 @@ import { products } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-// This tells Next.js to cache the GET request statically at the edge!
+// Tell Next.js to cache the GET request at the edge
 export const dynamic = "force-static";
-export const revalidate = 3600; // Revalidate every hour, or when you add/update a product
+export const revalidate = 3600;
 
 export async function GET() {
   const db = getDb();
   const allProducts = await db.select().from(products);
-  
   return NextResponse.json(allProducts);
 }
 
@@ -32,9 +31,10 @@ export async function POST(request: Request) {
     isBulk: body.isBulk ? 1 : 0,
   });
 
-  // Instantly clear the cache so the new product shows up
-  revalidatePath("/");
-  revalidatePath("/shop");
+  // FORCE THE CACHE TO CLEAR INSTANTLY
+  revalidatePath("/", "layout");
+  revalidatePath("/shop", "layout");
+
   return NextResponse.json({ success: true });
 }
 
@@ -56,9 +56,9 @@ export async function PUT(request: Request) {
     })
     .where(eq(products.id, body.id));
 
-  // Clear cache on update
-  revalidatePath("/");
-  revalidatePath("/shop");
+  revalidatePath("/", "layout");
+  revalidatePath("/shop", "layout");
+
   return NextResponse.json({ success: true });
 }
 
@@ -70,8 +70,8 @@ export async function DELETE(request: Request) {
   const db = getDb();
   await db.delete(products).where(eq(products.id, id));
   
-  // Clear cache on delete
-  revalidatePath("/");
-  revalidatePath("/shop");
+  revalidatePath("/", "layout");
+  revalidatePath("/shop", "layout");
+
   return NextResponse.json({ success: true });
 }
