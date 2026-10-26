@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "./CartContext";
 import { CartDrawer } from "@/components/CartDrawer";
-import { GlobalProductModal } from "@/components/GlobalProductModal"; // <-- ADD THIS
+import { AnnouncementBanner } from "@/components/AnnouncementBanner"; // ADD THIS
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,9 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
           <CartProvider>
+            <AnnouncementBanner /> {/* ADD THIS */}
             <Header />
             <CartDrawer />
-            <GlobalProductModal /> {/* <-- ADD THIS */}
             {children}
           </CartProvider>
         </ThemeProvider>
