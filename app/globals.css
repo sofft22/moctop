@@ -66,8 +66,11 @@
   }
 }
 
-/* 
-  --- CUSTOM STYLES ---
-  If you had any custom animations or styles in your original 
-  globals.css, paste them below this line.
-*/
+/* --- ADDED FOR THE MOVING ANNOUNCEMENT BANNER --- */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
