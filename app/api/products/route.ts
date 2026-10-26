@@ -2,31 +2,17 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { products } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+
+// This tells Next.js to cache the GET request statically at the edge!
+export const dynamic = "force-static";
+export const revalidate = 3600; // Revalidate every hour, or when you add/update a product
 
 export async function GET() {
   const db = getDb();
+  const allProducts = await db.select().from(products);
   
-  // 1. Only select the columns needed for the shop grid (ignoring heavy data if any)
-  const allProducts = await db.select({
-    id: products.id,
-    title: products.title,
-    price: products.price,
-    description: products.description,
-    category: products.category,
-    image: products.image,
-    inStock: products.inStock,
-    sizes: products.sizes,
-    featured: products.featured,
-    isBulk: products.isBulk,
-  }).from(products);
-
-  // 2. Add Cloudflare Edge Caching (Saves the result for 60 seconds)
-  // This makes the 2nd, 3rd, and 100th user load it in 0.01 seconds.
-  return NextResponse.json(allProducts, {
-    headers: {
-      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
-    },
-  });
+  return NextResponse.json(allProducts);
 }
 
 export async function POST(request: Request) {
@@ -46,6 +32,9 @@ export async function POST(request: Request) {
     isBulk: body.isBulk ? 1 : 0,
   });
 
+  // Instantly clear the cache so the new product shows up
+  revalidatePath("/");
+  revalidatePath("/shop");
   return NextResponse.json({ success: true });
 }
 
@@ -67,6 +56,9 @@ export async function PUT(request: Request) {
     })
     .where(eq(products.id, body.id));
 
+  // Clear cache on update
+  revalidatePath("/");
+  revalidatePath("/shop");
   return NextResponse.json({ success: true });
 }
 
@@ -77,5 +69,9 @@ export async function DELETE(request: Request) {
 
   const db = getDb();
   await db.delete(products).where(eq(products.id, id));
+  
+  // Clear cache on delete
+  revalidatePath("/");
+  revalidatePath("/shop");
   return NextResponse.json({ success: true });
 }
