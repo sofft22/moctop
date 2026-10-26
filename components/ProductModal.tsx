@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useCart } from "@/app/CartContext";
 
@@ -26,14 +26,15 @@ export function ProductModal({ product, onClose }: Props) {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
 
-  // Bulk Quote State
-  const [guests, setGuests] = useState("");
-  const [isQuoteSubmitted, setIsQuoteSubmitted] = useState(false);
-
   // Frequently Bought Together State
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
 
-  const isBulkOrder = product?.isBulk === 1;
+  // Toggle State
+  const isBulkAvailable = product?.isBulk === 1;
+
+  // Multiple Images Logic (Fallback to single image if array doesn't exist)
+  const displayImages = product?.images && Array.isArray(product.images) ? product.images : [product?.image];
+  const [activeImage, setActiveImage] = useState(displayImages[0]);
 
   useEffect(() => {
     if (product) {
@@ -44,8 +45,10 @@ export function ProductModal({ product, onClose }: Props) {
       setCopied(false);
       setIsLightboxOpen(false);
       setShowReviewForm(false);
-      setGuests("");
-      setIsQuoteSubmitted(false);
+      
+      // Set initial image
+      const initialImg = product?.images && Array.isArray(product.images) ? product.images[0] : product.image;
+      setActiveImage(initialImg);
 
       // Fetch approved reviews
       fetch("/api/reviews").then(res => res.json()).then(data => {
@@ -53,13 +56,10 @@ export function ProductModal({ product, onClose }: Props) {
         setReviews(productReviews);
       });
 
-      // Fetch and shuffle related products
+      // Fetch related products
       fetch("/api/products").then(res => res.json()).then(data => {
-        // Filter out the current product and any out of stock items
         const others = data.filter((p: any) => p.id !== product.id && p.inStock === 1);
-        // Shuffle the array
         const shuffled = others.sort(() => 0.5 - Math.random());
-        // Take the first 4
         setRelatedProducts(shuffled.slice(0, 4));
       });
     }
@@ -85,13 +85,9 @@ export function ProductModal({ product, onClose }: Props) {
     setTimeout(() => setAddedFlash(false), 2000);
   };
 
-  const handleQuoteSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsQuoteSubmitted(true);
-    setTimeout(() => {
-      setIsQuoteSubmitted(false);
-      setGuests("");
-    }, 3000);
+  const handleBulkQuote = () => {
+    const message = `Hi Mocktopia! I'd like to request a bulk quote for:%0A%0A*Product:* ${product.title}%0A*Size:* ${selectedSize}%0A%0APlease let me know the pricing and availability.`;
+    window.open(`https://wa.me/2348178910628?text=${message}`, '_blank');
   };
 
   const handleCopy = () => {
@@ -139,21 +135,31 @@ export function ProductModal({ product, onClose }: Props) {
           {/* SCROLLABLE BODY */}
           <div className="flex w-full flex-1 overflow-y-auto overscroll-contain">
             
-            {/* === DESKTOP STRUCTURE: Left Column (Image + Related) | Right Column (Details) === */}
             <div className="flex w-full flex-col md:flex-row">
               
-              {/* LEFT COLUMN */}
+              {/* LEFT COLUMN: Image & Related */}
               <div className="w-full md:w-1/2 shrink-0 flex flex-col">
                 
-                {/* Main Image */}
+                {/* Main Image (Increased Height) */}
                 <div className="relative w-full bg-[#EBE0D3]">
-                  <div className="relative h-[50vh] w-full cursor-zoom-in overflow-hidden sm:h-[400px]" onClick={() => setIsLightboxOpen(true)}>
+                  <div className="relative h-[55vh] w-full cursor-zoom-in overflow-hidden sm:h-[450px]" onClick={() => setIsLightboxOpen(true)}>
                     {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
-                    <Image src={product.image} alt={product.title} fill className="object-cover" onLoad={() => setMainImgLoaded(true)} priority />
+                    <Image src={activeImage} alt={product.title} fill className="object-cover" onLoad={() => setMainImgLoaded(true)} priority />
                   </div>
                 </div>
 
-                {/* Frequently Bought Together (Desktop Only position) */}
+                {/* Thumbnail Gallery (For future multiple images) */}
+                {displayImages.length > 1 && (
+                  <div className="flex gap-2 p-4 overflow-x-auto">
+                    {displayImages.map((img: string, i: number) => (
+                      <button key={i} onClick={() => setActiveImage(img)} className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 ${activeImage === img ? 'border-[#2C1A1D]' : 'border-transparent'}`}>
+                        <Image src={img} alt="Thumbnail" fill className="object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Frequently Bought Together (Desktop) */}
                 {relatedProducts.length > 0 && (
                   <div className="hidden md:block p-6 bg-[#FBF9F5]">
                     <h3 className="mb-4 text-[20px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
@@ -174,7 +180,7 @@ export function ProductModal({ product, onClose }: Props) {
                 )}
               </div>
 
-              {/* RIGHT COLUMN (Details) */}
+              {/* RIGHT COLUMN: Details */}
               <div className="w-full md:w-1/2 flex flex-col p-6 md:p-10">
                 <div className="mb-6">
                   <h2 className="text-[28px] leading-tight text-[#2C1A1D] md:text-[36px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>{product.title}</h2>
@@ -199,37 +205,37 @@ export function ProductModal({ product, onClose }: Props) {
                   </div>
                 )}
 
-                {/* Dynamic CTA */}
-                {isBulkOrder ? (
-                  <div className="flex flex-col gap-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Bulk Order Details</p>
-                    <form onSubmit={handleQuoteSubmit} className="flex flex-col gap-3">
-                      <input type="number" min="1" placeholder="Estimated guests" value={guests} onChange={(e) => setGuests(e.target.value)} className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[13px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} required />
-                      <button type="submit" className={`w-full rounded-md py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${isQuoteSubmitted ? "bg-green-700 text-white" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                        {isQuoteSubmitted ? "Quote Requested ✓" : "Request Quote"}
-                      </button>
-                    </form>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-6 flex items-center justify-between">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
-                      <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[#2C1A1D]/20 bg-white">
-                        <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white">−</button>
-                        <span className="flex h-10 w-12 items-center justify-center text-[13px] font-bold text-[#2C1A1D]">{qty}</span>
-                        <button onClick={() => setQty(qty + 1)} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white">+</button>
-                      </div>
+                {/* DUAL CTAs */}
+                <div className="flex flex-col gap-3 mb-10">
+                  {/* 1. Add to Bag (Always visible) */}
+                  <div className="flex items-center gap-4 mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
+                    <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[#2C1A1D]/20 bg-white">
+                      <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white">−</button>
+                      <span className="flex h-10 w-12 items-center justify-center text-[13px] font-bold text-[#2C1A1D]">{qty}</span>
+                      <button onClick={() => setQty(qty + 1)} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white">+</button>
                     </div>
+                  </div>
 
-                    <button onClick={handleAdd} className={`w-full rounded-md py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                      {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toLocaleString()}`}
+                  <button onClick={handleAdd} className={`w-full rounded-md py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                    {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toLocaleString()}`}
+                  </button>
+
+                  {/* 2. Bulk Order CTA (Only shows if isBulk is true) */}
+                  {isBulkAvailable && (
+                    <button 
+                      onClick={handleBulkQuote}
+                      className="w-full rounded-md border border-[#2C1A1D] py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#2C1A1D] hover:text-white"
+                      style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+                    >
+                      Request Bulk Quote
                     </button>
-                  </>
-                )}
+                  )}
+                </div>
 
-                <hr className="my-10 border-[#2C1A1D]/10" />
+                <hr className="mb-10 border-[#2C1A1D]/10" />
 
-                {/* Frequently Bought Together (Mobile Only position) */}
+                {/* Frequently Bought Together (Mobile) */}
                 {relatedProducts.length > 0 && (
                   <div className="md:hidden mb-10">
                     <h3 className="mb-4 text-[20px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
@@ -300,7 +306,7 @@ export function ProductModal({ product, onClose }: Props) {
       {/* LIGHTBOX */}
       {isLightboxOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black" onClick={() => setIsLightboxOpen(false)}>
-          <Image src={product.image} alt={product.title} fill className="object-contain" />
+          <Image src={activeImage} alt={product.title} fill className="object-contain" />
           <button className="absolute left-6 top-6 h-11 w-11 rounded-full bg-white text-black shadow-lg">✕</button>
         </div>
       )}
