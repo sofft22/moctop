@@ -17,21 +17,39 @@ export default function MyOrdersPage() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/orders").then(res => res.json()).then(data => {
-      setOrders(data);
+    // 1. Get the specific order IDs saved on THIS phone
+    const myOrderIds = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
+
+    if (myOrderIds.length === 0) {
       setLoading(false);
-      if (data.length > 0) {
-        setExpandedOrder(data[0].id);
-      }
-    });
+      return; // If they have no orders on this phone, stop loading
+    }
+
+    // 2. Fetch orders from API
+    fetch("/api/orders")
+      .then(res => res.json())
+      .then(data => {
+        // 3. Filter so we ONLY keep orders that are in their saved list
+        const myOrders = data.filter((order: any) => myOrderIds.includes(order.id));
+        
+        // Sort by date (newest first)
+        myOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        setOrders(myOrders);
+        setLoading(false);
+        
+        // Auto-expand the most recent order
+        if (myOrders.length > 0) {
+          setExpandedOrder(myOrders[0].id);
+        }
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const handleDownloadReceipt = async (order: any) => {
-    // 1. Trigger the hidden receipt to render
     setPdfOrder(order);
     setIsDownloading(true);
 
-    // 2. Wait a moment for React to render the hidden receipt, then capture it
     setTimeout(async () => {
       if (!hiddenReceiptRef.current) {
         setIsDownloading(false);
@@ -41,14 +59,12 @@ export default function MyOrdersPage() {
 
       try {
         const canvas = await html2canvas(hiddenReceiptRef.current, {
-          scale: 2, // High resolution
+          scale: 2,
           backgroundColor: "#FFFFFF",
           useCORS: true,
         });
 
         const imgData = canvas.toDataURL("image/png");
-        
-        // Custom size to fit the hidden receipt perfectly
         const pdfWidth = canvas.width * 0.264583; 
         const pdfHeight = canvas.height * 0.264583;
 
@@ -65,7 +81,7 @@ export default function MyOrdersPage() {
         alert("There was an error downloading your receipt.");
       } finally {
         setIsDownloading(false);
-        setPdfOrder(null); // Clean up
+        setPdfOrder(null);
       }
     }, 300);
   };
@@ -86,7 +102,7 @@ export default function MyOrdersPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F5] relative">
       
-      {/* CHOCOLATE PAGE HEADER (With id="hero" for the transparent header script) */}
+      {/* CHOCOLATE PAGE HEADER */}
       <section id="hero" className="bg-[#2C1A1D] pt-[88px] pb-16 px-6 md:pt-[104px] md:pb-24 md:px-12">
         <div className="mx-auto max-w-[800px]">
           <h1 className="text-[36px] md:text-[48px] text-[#FBF9F5]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
@@ -101,7 +117,7 @@ export default function MyOrdersPage() {
       <div className="mx-auto max-w-[800px] px-6 -mt-8 md:px-12 md:-mt-12 pb-24 relative z-10">
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg border border-[#2C1A1D]/10 p-12 text-center shadow-sm">
-            <p className="text-[15px] text-[#2C1A1D]/60 mb-6" style={{ fontFamily: "var(--font-inter), sans-serif" }}>You haven't placed any orders yet.</p>
+            <p className="text-[15px] text-[#2C1A1D]/60 mb-6" style={{ fontFamily: "var(--font-inter), sans-serif" }}>You haven't placed any orders on this device yet.</p>
             <Link href="/shop" className="bg-[#2C1A1D] text-[#FBF9F5] px-8 py-3.5 rounded-md text-[11px] font-bold uppercase tracking-widest inline-block transition-all hover:bg-[#1F1315]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
               Start Shopping
             </Link>
@@ -115,7 +131,6 @@ export default function MyOrdersPage() {
               return (
                 <div key={order.id} className="bg-white rounded-xl border border-[#2C1A1D]/10 shadow-sm overflow-hidden">
                   
-                  {/* Dropdown Toggle */}
                   <button 
                     onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                     className="w-full flex items-center justify-between p-6 text-left hover:bg-[#FBF9F5] transition-colors"
@@ -139,11 +154,9 @@ export default function MyOrdersPage() {
                     </div>
                   </button>
 
-                  {/* Expanded Order Details (Responsive, No clipping) */}
                   {isExpanded && (
                     <div className="border-t border-[#2C1A1D]/10 p-6 md:p-8 bg-[#FBF9F5]">
                       
-                      {/* Tracking Bar */}
                       <div className="mb-10">
                         <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order Status</p>
                         <div className="relative flex justify-between">
@@ -163,14 +176,12 @@ export default function MyOrdersPage() {
                         </div>
                       </div>
 
-                      {/* Responsive Details Box */}
                       <div className="bg-white rounded-lg border border-[#2C1A1D]/10 shadow-sm overflow-hidden mb-6">
                         <div className="bg-[#FBF9F5] p-4 border-b border-[#2C1A1D]/10">
                           <h3 className="font-bold text-[#2C1A1D] uppercase tracking-wider text-[12px]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order Summary</h3>
                         </div>
                         
                         <div className="p-4 md:p-6">
-                          {/* Items */}
                           <div className="flex flex-col gap-4 mb-6">
                             {items.map((item: any, i: number) => (
                               <div key={i} className="flex items-center gap-4 border-b border-[#2C1A1D]/5 pb-4 last:border-0 last:pb-0">
@@ -188,7 +199,6 @@ export default function MyOrdersPage() {
                             ))}
                           </div>
 
-                          {/* Totals */}
                           <div className="flex flex-col items-end gap-2 border-t border-[#2C1A1D]/10 pt-4 text-[13px] text-[#2C1A1D]/70">
                             <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{order.subtotal?.toLocaleString()}</span></div>
                             <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{order.deliveryFee?.toLocaleString()}</span></div>
@@ -197,7 +207,6 @@ export default function MyOrdersPage() {
                         </div>
                       </div>
 
-                      {/* Download Button */}
                       <div className="flex justify-end">
                         <button 
                           onClick={() => handleDownloadReceipt(order)}
@@ -219,16 +228,10 @@ export default function MyOrdersPage() {
         )}
       </div>
 
-      {/* ========================================================================= */}
-      {/* HIDDEN RECEIPT FOR PDF GENERATION ONLY (Never visible on screen) */}
-      {/* ========================================================================= */}
+      {/* HIDDEN RECEIPT FOR PDF */}
       <div style={{ position: "absolute", top: 0, left: 0, zIndex: -1, opacity: 0, pointerEvents: "none" }}>
         {pdfOrder && (
-          <div 
-            ref={hiddenReceiptRef} 
-            className="w-[800px] bg-white p-10 font-sans text-[#2C1A1D]"
-          >
-            {/* Chocolate Header */}
+          <div ref={hiddenReceiptRef} className="w-[800px] bg-white p-10 font-sans text-[#2C1A1D]">
             <div className="bg-[#2C1A1D] p-6 flex justify-between items-center text-[#FBF9F5] -m-10 mb-10">
               <div>
                 <h2 className="text-[32px] font-semibold tracking-[0.15em] uppercase">MOCKTOPIA</h2>
@@ -241,7 +244,6 @@ export default function MyOrdersPage() {
               </div>
             </div>
 
-            {/* Side-by-Side Details */}
             <div className="flex flex-row justify-between mb-8 text-[14px] text-[#2C1A1D]/70">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-widest text-[#2C1A1D]/40 mb-2">Billed To:</p>
@@ -256,7 +258,6 @@ export default function MyOrdersPage() {
               </div>
             </div>
 
-            {/* Items Table */}
             <table className="w-full mb-8">
               <thead>
                 <tr className="border-b-2 border-[#2C1A1D]/10">
@@ -287,14 +288,12 @@ export default function MyOrdersPage() {
               </tbody>
             </table>
 
-            {/* Totals */}
             <div className="flex flex-col items-end gap-3 border-t-2 border-[#2C1A1D]/10 pt-4 mb-10">
               <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{pdfOrder.subtotal?.toLocaleString()}</span></div>
               <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{pdfOrder.deliveryFee?.toLocaleString()}</span></div>
               <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{pdfOrder.total?.toLocaleString()}</span></div>
             </div>
 
-            {/* Footer */}
             <div className="text-center text-[12px] text-[#2C1A1D]/50 border-t border-[#2C1A1D]/10 pt-6">
               <p className="font-bold text-[#2C1A1D] mb-1">Thank you for shopping with Mocktopia.</p>
               <p>Baked with love. For inquiries, contact us on WhatsApp.</p>
