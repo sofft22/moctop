@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   
   await db.update(settings)
     .set({
-      deliveryFee: body.deliveryFee,
-      deliveryZones: body.deliveryZones, // NEW
+      // REMOVED deliveryFee because the admin form no longer sends it
+      deliveryZones: body.deliveryZones, 
       whatsappNumber: body.whatsappNumber,
       bankName: body.bankName,
       accountName: body.accountName,
