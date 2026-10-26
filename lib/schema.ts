@@ -1,7 +1,6 @@
 // lib/schema.ts
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
-// Find the products table in lib/schema.ts and update it:
 export const products = sqliteTable("products", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -9,10 +8,11 @@ export const products = sqliteTable("products", {
   description: text("description"),
   category: text("category").notNull(),
   image: text("image").notNull(),
+  images: text("images"),
   inStock: integer("inStock").default(1),
   sizes: text("sizes").notNull(),
-  featured: integer("featured").default(0), // 1 = Show on Home, 0 = Hide
-  isBulk: integer("isBulk").default(0),     // 1 = Bulk Order Form, 0 = Normal Cart
+  featured: integer("featured").default(0),
+  isBulk: integer("isBulk").default(0),
 });
 
 export const orders = sqliteTable("orders", {
@@ -25,6 +25,8 @@ export const orders = sqliteTable("orders", {
   items: text("items").notNull(),
   subtotal: integer("subtotal").notNull(),
   deliveryFee: integer("deliveryFee").notNull(),
+  discountAmount: integer("discountAmount").default(0), // NEW
+  promoCode: text("promoCode"),                        // NEW
   total: integer("total").notNull(),
   paymentMethod: text("paymentMethod").notNull(),
   status: text("status").default("Pending"),
@@ -41,23 +43,33 @@ export const reviews = sqliteTable("reviews", {
   date: text("date").notNull(),
 });
 
-// lib/schema.ts
 export const settings = sqliteTable("settings", {
   id: integer("id").primaryKey(),
-  deliveryFee: integer("deliveryFee").default(0), // We'll keep this as a fallback
-  deliveryZones: text("deliveryZones"), // NEW: Will store a JSON string like '[{"name":"London","price":5}]'
+  deliveryFee: integer("deliveryFee").default(0),
+  deliveryZones: text("deliveryZones"),
   whatsappNumber: text("whatsappNumber"),
   bankName: text("bankName"),
   accountName: text("accountName"),
   accountNumber: text("accountNumber"),
+  bannerText: text("bannerText"),         // NEW: For the announcement
+  bannerActive: integer("bannerActive").default(0), // NEW: Toggle ON/OFF
 });
 
-export const content = sqliteTable("content", {
-  id: integer("id").primaryKey(),
-  heroImage: text("heroImage"),
-  heroHeadline: text("heroHeadline"),
-  aboutText: text("aboutText"),
-  catBanana: text("catBanana"),
-  catPuff: text("catPuff"),
-  catMocktail: text("catMocktail"),
+export const promos = sqliteTable("promos", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  type: text("type").notNull(), // "percentage" or "flat"
+  value: integer("value").notNull(), // 10 for 10%, 500 for £5.00
+  minSpend: integer("minSpend").default(0),
+  maxUses: integer("maxUses").default(0),
+  currentUses: integer("currentUses").default(0),
+  expiresAt: text("expiresAt"),
+  isActive: integer("isActive").default(1),
+});
+
+export const promoUsage = sqliteTable("promo_usage", {
+  id: text("id").primaryKey(),
+  promoId: text("promoId").notNull(),
+  phone: text("phone").notNull(),
+  date: text("date").notNull(),
 });
