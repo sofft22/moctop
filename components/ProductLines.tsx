@@ -27,7 +27,6 @@ export function ProductLines() {
   ];
 
   return (
-    // Increased side padding on desktop (lg:px-20) for a premium, centered look
     <section id="categories" className="w-full bg-[#FBF9F5] py-16 px-6 md:py-24 md:px-12 lg:px-20">
       <div className="mx-auto max-w-[1200px]">
         
@@ -42,15 +41,17 @@ export function ProductLines() {
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {categories.map((cat) => (
             <Link 
               key={cat.id} 
               href={cat.link}
-              className="group flex flex-col"
+              // The outer container is the white box
+              className="group flex flex-col bg-white rounded-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-              {/* IMAGE with Title INSIDE */}
-              <div className="relative w-full aspect-[4/3] bg-[#EBE0D3] overflow-hidden rounded-sm mb-4">
+              
+              {/* Top: Image (With Title anchored inside) */}
+              <div className="relative w-full aspect-[4/3] bg-[#EBE0D3] overflow-hidden">
                 <Image
                   src={cat.image}
                   alt={cat.title}
@@ -58,13 +59,13 @@ export function ProductLines() {
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 
-                {/* Dark Overlay */}
-                <div className="absolute inset-0 bg-[#2C1A1D]/40 transition-opacity duration-300 group-hover:opacity-50" />
+                {/* Subtle gradient at the bottom so text is readable */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
                 
-                {/* Title inside the image */}
-                <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
+                {/* Title anchored to the bottom left of the image */}
+                <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6">
                   <h3 
-                    className="text-[28px] text-white md:text-[36px] drop-shadow-lg leading-tight"
+                    className="text-[28px] text-white md:text-[32px] leading-tight drop-shadow-md"
                     style={{ fontFamily: 'var(--font-dm-serif), serif' }}
                   >
                     {cat.title}
@@ -72,13 +73,15 @@ export function ProductLines() {
                 </div>
               </div>
 
-              {/* SMALL DESCRIPTION BELOW */}
-              <p 
-                className="text-[13px] leading-[1.6] text-[#2C1A1D]/70 md:text-[14px] px-2"
-                style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-              >
-                {cat.description}
-              </p>
+              {/* Bottom: Description text inside the white box */}
+              <div className="p-5 md:p-6 flex-1">
+                <p 
+                  className="text-[13px] leading-[1.6] text-[#2C1A1D]/70 md:text-[14px]"
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                >
+                  {cat.description}
+                </p>
+              </div>
 
             </Link>
           ))}
