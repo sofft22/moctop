@@ -46,12 +46,11 @@ export function ProductLines() {
             <Link 
               key={cat.id} 
               href={cat.link}
-              // The outer container is the white box
-              className="group flex flex-col bg-white rounded-sm overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               
-              {/* Top: Image (With Title anchored inside) */}
-              <div className="relative w-full aspect-[4/3] bg-[#EBE0D3] overflow-hidden">
+              {/* Top: Image (Slightly longer aspect ratio) */}
+              <div className="relative w-full aspect-[5/4] bg-[#EBE0D3] overflow-hidden">
                 <Image
                   src={cat.image}
                   alt={cat.title}
