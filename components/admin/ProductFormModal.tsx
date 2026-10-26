@@ -11,15 +11,36 @@ interface Props {
 
 export function ProductFormModal({ product, onClose, onSave }: Props) {
   const [title, setTitle] = useState(product?.title || "");
-  const [price, setPrice] = useState(product?.price.toString() || "");
+  const [price, setPrice] = useState(product?.price?.toString() || "");
   const [description, setDescription] = useState(product?.description || "");
   const [category, setCategory] = useState(product?.category || "banana-bread");
-  const [inStock, setInStock] = useState(product?.inStock === 1);
-  const [featured, setFeatured] = useState(product?.featured === 1); // NEW
-  const [isBulk, setIsBulk] = useState(product?.isBulk === 1);       // NEW
   
-  const [sizes, setSizes] = useState<string[]>(product?.sizes ? JSON.parse(product.sizes) : [""]);
-  const [imageUrl, setImageUrl] = useState(product?.image || "");
+  const [inStock, setInStock] = useState(product ? product.inStock === 1 : true);
+  const [featured, setFeatured] = useState(product ? product.featured === 1 : true);
+  const [isBulk, setIsBulk] = useState(product ? product.isBulk === 1 : true);
+  
+  const [sizes, setSizes] = useState<string[]>(() => {
+    if (!product || !product.sizes) return [""];
+    if (Array.isArray(product.sizes)) return product.sizes;
+    try {
+      const parsed = JSON.parse(product.sizes);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : [""];
+    } catch (e) {
+      return [""];
+    }
+  });
+  
+  const [images, setImages] = useState<string[]>(() => {
+    if (!product) return [];
+    if (product.images) {
+      if (Array.isArray(product.images)) return product.images;
+      try {
+        const parsed = JSON.parse(product.images);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return product.image ? [product.image] : [];
+  });
   
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,18 +64,39 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
         
         const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-        setImageUrl(dataUrl);
+        
+        setImages((prev) => {
+          if (prev.length === 1 && prev[0] === "") return [dataUrl];
+          return [...prev, dataUrl];
+        });
         setUploading(false);
       };
       img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setImages(images.filter((_, i) => i !== indexToRemove));
+  };
+
+  const setMainImage = (indexToMakeMain: number) => {
+    if (indexToMakeMain === 0) return;
+    const newImages = [...images];
+    const [mainImage] = newImages.splice(indexToMakeMain, 1);
+    newImages.unshift(mainImage);
+    setImages(newImages);
   };
 
   const handleSave = async () => {
     if (!title.trim() || !price) return alert("Title and price are required.");
+    if (images.length === 0 || images[0] === "") return alert("At least one image is required.");
 
     setSaving(true);
+    
+    const cleanSizes = sizes.filter((s) => typeof s === 'string' && s.trim() !== "");
+
     const payload = {
       id: product?.id,
       title: title.trim(),
@@ -62,10 +104,11 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
       description: description.trim(),
       category,
       inStock,
-      featured, // NEW
-      isBulk,   // NEW
-      image: imageUrl,
-      sizes: sizes.filter((s) => s.trim() !== ""),
+      featured,
+      isBulk,
+      image: images[0], 
+      images: images,   
+      sizes: cleanSizes,
     };
 
     const method = product ? "PUT" : "POST";
@@ -93,23 +136,47 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
           
-          {/* IMAGE UPLOAD */}
+          {/* MULTIPLE IMAGE UPLOAD UI */}
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Product Image</label>
-            <div className="flex items-center gap-4">
-              {imageUrl ? (
-                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-[#EBE0D3]">
-                  <Image src={imageUrl} alt="Preview" fill className="object-cover" />
-                  <button onClick={() => setImageUrl("")} className="absolute top-1 right-1 bg-white rounded-full h-6 w-6 flex items-center justify-center text-red-500 text-xs shadow-md">✕</button>
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Product Images</label>
+            
+            <div className="flex flex-wrap gap-3">
+              {/* Render uploaded images */}
+              {images.map((img, i) => (
+                <div key={i} className="relative h-24 w-24 shrink-0 group">
+                  <div className={`relative h-full w-full overflow-hidden rounded-md bg-[#EBE0D3] border-2 ${i === 0 ? 'border-[#2C1A1D]' : 'border-transparent'}`}>
+                    <Image src={img} alt={`Preview ${i}`} fill className="object-cover" />
+                    
+                    {/* Hover Overlay for Actions */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                      <button type="button" onClick={() => removeImage(i)} className="bg-white text-red-500 rounded-sm px-2 py-1 text-[10px] font-bold w-[80%]">Remove</button>
+                      {i !== 0 && (
+                        <button type="button" onClick={() => setMainImage(i)} className="bg-white text-[#2C1A1D] rounded-sm px-2 py-1 text-[10px] font-bold w-[80%]">Make Main</button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Main Badge */}
+                  {i === 0 && (
+                    <span className="absolute -top-2 -left-2 bg-[#2C1A1D] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">MAIN</span>
+                  )}
                 </div>
-              ) : (
-                <label className="flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#2C1A1D]/20 bg-white text-[#2C1A1D]/50 hover:border-[#2C1A1D]">
-                  {uploading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /> : <span className="text-2xl">+</span>}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-                </label>
-              )}
-              <p className="text-[12px] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-inter), sans-serif" }}>Upload a high-quality image.</p>
+              ))}
+
+              {/* Upload Button */}
+              <label className="flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#2C1A1D]/20 bg-white text-[#2C1A1D]/50 hover:border-[#2C1A1D] transition-colors">
+                {uploading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" />
+                ) : (
+                  <>
+                    <span className="text-2xl">+</span>
+                    <span className="text-[10px] font-bold uppercase">Add Image</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+              </label>
             </div>
+            <p className="text-[11px] text-[#2C1A1D]/50 mt-2" style={{ fontFamily: "var(--font-inter), sans-serif" }}>Upload multiple images. The one marked MAIN shows on the grid.</p>
           </div>
 
           <div>
@@ -119,8 +186,8 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Price (₦)</label>
-              <input value={price} onChange={e => setPrice(e.target.value)} type="number" placeholder="6500" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Price (£)</label>
+              <input value={price} onChange={e => setPrice(e.target.value)} type="number" placeholder="6.50" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
             </div>
             <div>
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Category</label>
@@ -137,7 +204,6 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Tell the customer why they need this..." className="w-full resize-none rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
           </div>
 
-          {/* SIZES */}
           <div>
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Sizes / Options</label>
             <div className="flex flex-col gap-2">
@@ -151,7 +217,6 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
             </div>
           </div>
 
-          {/* NEW BULK ORDER TOGGLE */}
           <div className="flex items-center justify-between border-y border-[#2C1A1D]/10 py-4">
             <div>
               <p className="text-[14px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Bulk Order Item</p>
@@ -162,7 +227,6 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
             </button>
           </div>
 
-          {/* IN STOCK TOGGLE */}
           <div className="flex items-center justify-between pb-4">
             <div>
               <p className="text-[14px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>In Stock</p>
@@ -173,7 +237,6 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
             </button>
           </div>
 
-          {/* NEW FEATURED TOGGLE */}
           <div className="flex items-center justify-between border-y border-[#2C1A1D]/10 py-4">
             <div>
               <p className="text-[14px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Show on Homepage</p>
