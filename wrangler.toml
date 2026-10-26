@@ -1,9 +1,10 @@
-pages_build_output_dir = ".vercel/output/static"
-name = "mocktopia"
+name = "moctop"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
-# The binding connects your code to the database
+main = ".open-next/worker.js"
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+
 [[d1_databases]]
 binding = "DB"
 database_name = "mocktopia-db"
