@@ -86,19 +86,19 @@ export default function MyOrdersPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F5] relative">
       
-      {/* PAGE HEADER */}
-      <section id="hero" className="bg-[#FBF9F5] pt-[88px] pb-8 px-6 md:pt-[104px] md:pb-12 md:px-12 border-b border-[#2C1A1D]/10">
+      {/* CHOCOLATE PAGE HEADER (With id="hero" for the transparent header script) */}
+      <section id="hero" className="bg-[#2C1A1D] pt-[88px] pb-16 px-6 md:pt-[104px] md:pb-24 md:px-12">
         <div className="mx-auto max-w-[800px]">
-          <h1 className="text-[36px] md:text-[48px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+          <h1 className="text-[36px] md:text-[48px] text-[#FBF9F5]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
             My Orders
           </h1>
-          <p className="mt-2 text-[14px] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+          <p className="mt-2 text-[14px] text-[#FBF9F5]/60" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
             Track your order status and download your professional receipts.
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-[800px] px-6 py-8 md:px-12 pb-24">
+      <div className="mx-auto max-w-[800px] px-6 -mt-8 md:px-12 md:-mt-12 pb-24 relative z-10">
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg border border-[#2C1A1D]/10 p-12 text-center shadow-sm">
             <p className="text-[15px] text-[#2C1A1D]/60 mb-6" style={{ fontFamily: "var(--font-inter), sans-serif" }}>You haven't placed any orders yet.</p>
@@ -221,7 +221,6 @@ export default function MyOrdersPage() {
 
       {/* ========================================================================= */}
       {/* HIDDEN RECEIPT FOR PDF GENERATION ONLY (Never visible on screen) */}
-      {/* This guarantees the PDF is always wide, bold, and un-clipped */}
       {/* ========================================================================= */}
       <div style={{ position: "absolute", top: 0, left: 0, zIndex: -1, opacity: 0, pointerEvents: "none" }}>
         {pdfOrder && (
