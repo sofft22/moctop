@@ -16,8 +16,9 @@ export async function POST(request: Request) {
   
   await db.update(settings)
     .set({
-      deliveryZones: body.deliveryZones,
-      // Bank and WhatsApp fields are intentionally left out so they aren't overwritten
+      deliveryZones: body.deliveryZones !== undefined ? body.deliveryZones : undefined,
+      bannerText: body.bannerText !== undefined ? body.bannerText : undefined,
+      bannerActive: body.bannerActive !== undefined ? body.bannerActive : undefined,
     })
     .where(eq(settings.id, 1));
 
