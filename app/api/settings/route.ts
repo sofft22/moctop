@@ -16,12 +16,8 @@ export async function POST(request: Request) {
   
   await db.update(settings)
     .set({
-      // REMOVED deliveryFee because the admin form no longer sends it
-      deliveryZones: body.deliveryZones, 
-      whatsappNumber: body.whatsappNumber,
-      bankName: body.bankName,
-      accountName: body.accountName,
-      accountNumber: body.accountNumber,
+      deliveryZones: body.deliveryZones,
+      // Bank and WhatsApp fields are intentionally left out so they aren't overwritten
     })
     .where(eq(settings.id, 1));
 
