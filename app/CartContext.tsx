@@ -16,6 +16,7 @@ interface CartContextType {
   cart: CartItem[];
   addToCart: (product: any, size: string, qty: number) => void;
   removeFromCart: (cartId: string) => void;
+  updateQty: (cartId: string, newQty: number) => void; // ADDED THIS
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
@@ -30,7 +31,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // 1. On first load, read from localStorage ONLY after the browser is ready
   useEffect(() => {
     setIsMounted(true);
     try {
@@ -46,7 +46,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // 2. Whenever the cart changes, save it to localStorage (but ONLY if we are mounted)
   useEffect(() => {
     if (isMounted) {
       localStorage.setItem("mocktopia_cart", JSON.stringify(cart));
@@ -84,6 +83,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((prevCart) => prevCart.filter((item) => item.cartId !== cartId));
   };
 
+  // ADDED THIS FUNCTION FOR THE DRAWER
+  const updateQty = (cartId: string, newQty: number) => {
+    if (newQty < 1) return;
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.cartId === cartId ? { ...item, qty: newQty } : item
+      )
+    );
+  };
+
   const clearCart = () => {
     setCart([]);
     localStorage.removeItem("mocktopia_cart");
@@ -98,6 +107,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cart,
         addToCart,
         removeFromCart,
+        updateQty, // ADDED TO PROVIDER
         clearCart,
         cartTotal,
         cartCount,
