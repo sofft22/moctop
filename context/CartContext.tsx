@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useSyncExternalStore } from "react";
 
 export interface CartItem {
   cartId: string;
@@ -25,47 +25,61 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Custom event to trigger updates across the app
+const dispatchCartUpdate = () => {
+  window.dispatchEvent(new Event("cart-update"));
+};
+
+const subscribe = (callback: () => void) => {
+  window.addEventListener("cart-update", callback);
+  window.addEventListener("storage", callback); // Syncs across tabs
+  return () => {
+    window.removeEventListener("cart-update", callback);
+    window.removeEventListener("storage", callback);
+  };
+};
+
+const getSnapshot = () => {
+  return localStorage.getItem("mocktopia_cart") || "[]";
+};
+
+const getServerSnapshot = () => {
+  return "[]"; // Always empty on the server
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // useSyncExternalStore guarantees the server and client stay in sync
+  const cartString = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  
+  // Parse the string from localStorage into an array
+  let cart: CartItem[] = [];
+  try {
+    const parsed = JSON.parse(cartString);
+    if (Array.isArray(parsed)) cart = parsed;
+  } catch (e) {}
+
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
-  // 1. Mark as mounted so we know we are in the browser, then load the cart
-  useEffect(() => {
-    setIsMounted(true);
-    const savedCart = localStorage.getItem("mocktopia_cart");
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Failed to parse cart", e);
-      }
-    }
-  }, []);
-
-  // 2. Save to localStorage whenever the cart changes (only if mounted)
-  useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem("mocktopia_cart", JSON.stringify(cart));
-    }
-  }, [cart, isMounted]);
+  const saveCart = (newCart: CartItem[]) => {
+    localStorage.setItem("mocktopia_cart", JSON.stringify(newCart));
+    dispatchCartUpdate(); // Tell React to re-render with the new data
+  };
 
   const addToCart = (product: any, size: string, qty: number) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find(
-        (item) => item.id === product.id && item.size === size
+    const existingItem = cart.find(
+      (item) => item.id === product.id && item.size === size
+    );
+
+    let newCart;
+    if (existingItem) {
+      newCart = cart.map((item) =>
+        item.id === product.id && item.size === size
+          ? { ...item, qty: item.qty + qty }
+          : item
       );
-
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id && item.size === size
-            ? { ...item, qty: item.qty + qty }
-            : item
-        );
-      }
-
-      return [
-        ...prevCart,
+    } else {
+      newCart = [
+        ...cart,
         {
           ...product,
           cartId: `${product.id}-${size}-${Date.now()}`,
@@ -73,17 +87,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
           qty,
         },
       ];
-    });
-    setIsCartOpen(true); 
+    }
+    
+    saveCart(newCart);
+    setIsCartOpen(true);
   };
 
   const removeFromCart = (cartId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.cartId !== cartId));
+    const newCart = cart.filter((item) => item.cartId !== cartId);
+    saveCart(newCart);
   };
 
   const clearCart = () => {
-    setCart([]);
-    localStorage.removeItem("mocktopia_cart");
+    saveCart([]);
   };
 
   const cartTotal = cart.reduce((total, item) => total + item.price * item.qty, 0);
