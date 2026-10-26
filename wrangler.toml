@@ -1,0 +1,9 @@
+name = "mocktopia"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# The binding connects your code to the database
+[[d1_databases]]
+binding = "DB"
+database_name = "mocktopia-db"
+database_id = "YOUR_D1_DATABASE_ID"
