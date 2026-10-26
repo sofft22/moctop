@@ -16,7 +16,7 @@ interface CartContextType {
   cart: CartItem[];
   addToCart: (product: any, size: string, qty: number) => void;
   removeFromCart: (cartId: string) => void;
-  updateQty: (cartId: string, newQty: number) => void; // ADDED THIS
+  updateQty: (cartId: string, newQty: number) => void;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
@@ -76,14 +76,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         },
       ];
     });
-    setIsCartOpen(true); 
+
+    // ONLY open the cart if the user didn't have anything in it before
+    if (cart.length === 0) {
+      setIsCartOpen(true);
+    }
   };
 
   const removeFromCart = (cartId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.cartId !== cartId));
   };
 
-  // ADDED THIS FUNCTION FOR THE DRAWER
   const updateQty = (cartId: string, newQty: number) => {
     if (newQty < 1) return;
     setCart((prevCart) =>
@@ -107,7 +110,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cart,
         addToCart,
         removeFromCart,
-        updateQty, // ADDED TO PROVIDER
+        updateQty,
         clearCart,
         cartTotal,
         cartCount,
