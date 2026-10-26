@@ -6,4 +6,4 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "mocktopia-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_id = "a84f1095-be04-4b25-afa2-074f9000ad20"
