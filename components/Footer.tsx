@@ -10,9 +10,9 @@ export function Footer() {
   const pathname = usePathname();
   
   const [legalModalOpen, setLegalModalOpen] = useState(false);
-  const [legalType, setLegalType] = useState<"terms" | "privacy" | "refunds" | "allergens" | null>(null);
+  const [legalType, setLegalType] = useState<"terms" | "privacy" | "refunds" | "allergens" | "delivery" | null>(null);
 
-  const openLegal = (type: "terms" | "privacy" | "refunds" | "allergens") => {
+  const openLegal = (type: "terms" | "privacy" | "refunds" | "allergens" | "delivery") => {
     setLegalType(type);
     setLegalModalOpen(true);
   };
@@ -50,7 +50,7 @@ export function Footer() {
     <footer id="footer" className="w-full bg-[#2C1A1D] pt-20 pb-10 px-6 md:pt-24 md:px-12">
       <div className="mx-auto max-w-[1200px]">
         
-        {/* 5-COLUMN LAYOUT */}
+        {/* 4-COLUMN LAYOUT */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-6 pb-16 border-b border-white/10">
           
           {/* Column 1: Brand */}
@@ -71,7 +71,7 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Column 2: Navigation (Replaces Shop & Company) */}
+          {/* Column 2: Navigation */}
           <div className="flex flex-col gap-4">
             <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 text-white/50" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>
               Navigation
@@ -106,6 +106,7 @@ export function Footer() {
             </h4>
             <button onClick={() => openLegal("terms")} className="text-left text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Terms & Conditions</button>
             <button onClick={() => openLegal("privacy")} className="text-left text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Privacy Policy</button>
+            <button onClick={() => openLegal("delivery")} className="text-left text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Delivery Policy</button>
             <button onClick={() => openLegal("refunds")} className="text-left text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Refund Policy</button>
             <button onClick={() => openLegal("allergens")} className="text-left text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Allergen Info</button>
           </div>
