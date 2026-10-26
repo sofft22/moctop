@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useCart } from "@/app/CartContext";
 
@@ -30,6 +30,9 @@ export function ProductModal({ product, onClose }: Props) {
   const [guests, setGuests] = useState("");
   const [isQuoteSubmitted, setIsQuoteSubmitted] = useState(false);
 
+  // Frequently Bought Together State
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+
   const isBulkOrder = product?.isBulk === 1;
 
   useEffect(() => {
@@ -44,9 +47,20 @@ export function ProductModal({ product, onClose }: Props) {
       setGuests("");
       setIsQuoteSubmitted(false);
 
+      // Fetch approved reviews
       fetch("/api/reviews").then(res => res.json()).then(data => {
         const productReviews = data.filter((r: any) => r.productId === product.id && r.approved === 1);
         setReviews(productReviews);
+      });
+
+      // Fetch and shuffle related products
+      fetch("/api/products").then(res => res.json()).then(data => {
+        // Filter out the current product and any out of stock items
+        const others = data.filter((p: any) => p.id !== product.id && p.inStock === 1);
+        // Shuffle the array
+        const shuffled = others.sort(() => 0.5 - Math.random());
+        // Take the first 4
+        setRelatedProducts(shuffled.slice(0, 4));
       });
     }
   }, [product]);
@@ -106,7 +120,7 @@ export function ProductModal({ product, onClose }: Props) {
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8" onClick={onClose}>
-        <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[900px] md:rounded-lg overflow-hidden">
+        <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[1200px] md:rounded-lg overflow-hidden">
           
           {/* HEADER */}
           <header className="relative z-10 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5] shrink-0">
@@ -123,35 +137,59 @@ export function ProductModal({ product, onClose }: Props) {
           </header>
 
           {/* SCROLLABLE BODY */}
-          <div className="flex w-full flex-1 flex-col overflow-y-auto overscroll-contain">
+          <div className="flex w-full flex-1 overflow-y-auto overscroll-contain">
             
-            {/* TOP SECTION: IMAGE + DETAILS STACKED */}
-            <div className="flex flex-col">
+            {/* === DESKTOP STRUCTURE: Left Column (Image + Related) | Right Column (Details) === */}
+            <div className="flex w-full flex-col md:flex-row">
               
-              {/* IMAGE (Full width on all screens now) */}
-              <div className="relative w-full bg-[#EBE0D3]">
-                <div className="relative h-[50vh] w-full cursor-zoom-in overflow-hidden sm:h-[400px]" onClick={() => setIsLightboxOpen(true)}>
-                  {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
-                  <Image src={product.image} alt={product.title} fill className="object-cover" onLoad={() => setMainImgLoaded(true)} priority />
+              {/* LEFT COLUMN */}
+              <div className="w-full md:w-1/2 shrink-0 flex flex-col">
+                
+                {/* Main Image */}
+                <div className="relative w-full bg-[#EBE0D3]">
+                  <div className="relative h-[50vh] w-full cursor-zoom-in overflow-hidden sm:h-[400px]" onClick={() => setIsLightboxOpen(true)}>
+                    {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
+                    <Image src={product.image} alt={product.title} fill className="object-cover" onLoad={() => setMainImgLoaded(true)} priority />
+                  </div>
                 </div>
+
+                {/* Frequently Bought Together (Desktop Only position) */}
+                {relatedProducts.length > 0 && (
+                  <div className="hidden md:block p-6 bg-[#FBF9F5]">
+                    <h3 className="mb-4 text-[20px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+                      Frequently bought together
+                    </h3>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {relatedProducts.map((p) => (
+                        <div key={p.id} className="group cursor-pointer">
+                          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-sm bg-[#EBE0D3] mb-2">
+                            <Image src={p.image} alt={p.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                          </div>
+                          <p className="text-[11px] font-semibold text-[#2C1A1D] truncate" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{p.title}</p>
+                          <p className="text-[10px] text-[#2C1A1D]/60">£{p.price.toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* DETAILS (Below image) */}
-              <div className="w-full p-6 md:p-10">
+              {/* RIGHT COLUMN (Details) */}
+              <div className="w-full md:w-1/2 flex flex-col p-6 md:p-10">
                 <div className="mb-6">
                   <h2 className="text-[28px] leading-tight text-[#2C1A1D] md:text-[36px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>{product.title}</h2>
-                  <p className="mt-2 text-[18px] font-semibold text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>₦{product.price.toLocaleString()}</p>
+                  <p className="mt-2 text-[18px] font-semibold text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{product.price.toLocaleString()}</p>
                 </div>
 
                 <p className="text-[14px] leading-relaxed text-[#2C1A1D]/70 mb-8" style={{ fontFamily: "var(--font-inter), sans-serif" }}>{product.description}</p>
                 
                 <hr className="mb-8 border-[#2C1A1D]/10" />
 
-                {/* SIZES */}
+                {/* Sizes */}
                 {sizes.length > 0 && (
                   <div className="mb-8">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Select Size</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {sizes.map((size: string) => (
                         <button key={size} onClick={() => setSelectedSize(size)} className={`flex min-h-[44px] items-center justify-center px-2 py-2 text-[11px] font-bold uppercase tracking-wide transition-all border rounded-md ${selectedSize === size ? "bg-[#2C1A1D]/70 border-[#2C1A1D]/70 text-[#FBF9F5]" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                           {size}
@@ -161,7 +199,7 @@ export function ProductModal({ product, onClose }: Props) {
                   </div>
                 )}
 
-                {/* DYNAMIC CTA */}
+                {/* Dynamic CTA */}
                 {isBulkOrder ? (
                   <div className="flex flex-col gap-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Bulk Order Details</p>
@@ -174,7 +212,6 @@ export function ProductModal({ product, onClose }: Props) {
                   </div>
                 ) : (
                   <>
-                    {/* QUANTITY */}
                     <div className="mb-6 flex items-center justify-between">
                       <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
                       <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[#2C1A1D]/20 bg-white">
@@ -184,84 +221,77 @@ export function ProductModal({ product, onClose }: Props) {
                       </div>
                     </div>
 
-                    {/* ADD TO BAG */}
                     <button onClick={handleAdd} className={`w-full rounded-md py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                      {addedFlash ? "Added to Bag ✓" : `Add to Bag — ₦${totalPrice.toLocaleString()}`}
+                      {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toLocaleString()}`}
                     </button>
                   </>
                 )}
-              </div>
-            </div>
 
-            {/* BOTTOM SECTION: FULL WIDTH COMPLETE THE LOOK & REVIEWS */}
-            <div className="w-full border-t border-[#2C1A1D]/10 bg-[#FBF9F5] p-6 md:p-10">
-              
-              {/* COMPLETE THE LOOK */}
-              <div className="mb-12">
-                <h3 className="mb-6 text-[22px] font-normal text-[#2C1A1D] md:text-[26px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
-                  Complete the look
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {/* Placeholder items for now, can be wired to products */}
-                  <div className="bg-white p-3 rounded-md border border-[#2C1A1D]/5 cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="relative aspect-square w-full rounded-sm overflow-hidden bg-[#EBE0D3] mb-2">
-                      <Image src="/feat-mocktail-hibiscus.png" alt="Pair" fill className="object-cover" />
-                    </div>
-                    <p className="text-[12px] font-bold text-[#2C1A1D]">Hibiscus Mocktail</p>
-                    <p className="text-[11px] text-[#2C1A1D]/50">₦3,500</p>
-                  </div>
-                  <div className="bg-white p-3 rounded-md border border-[#2C1A1D]/5 cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="relative aspect-square w-full rounded-sm overflow-hidden bg-[#EBE0D3] mb-2">
-                      <Image src="/feat-puff-classic.png" alt="Pair" fill className="object-cover" />
-                    </div>
-                    <p className="text-[12px] font-bold text-[#2C1A1D]">Classic Puff Puff</p>
-                    <p className="text-[11px] text-[#2C1A1D]/50">₦3,000</p>
-                  </div>
-                </div>
-              </div>
+                <hr className="my-10 border-[#2C1A1D]/10" />
 
-              {/* REVIEWS */}
-              <div>
-                <h3 className="mb-6 text-[22px] font-normal text-[#2C1A1D] md:text-[26px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Reviews</h3>
-                
-                {reviews.length === 0 ? (
-                  <p className="text-[13px] text-[#2C1A1D]/50 mb-6">No reviews yet. Be the first to review this item.</p>
-                ) : (
-                  <div className="flex flex-col gap-5 mb-6">
-                    {reviews.map(r => (
-                      <div key={r.id} className="bg-white p-4 rounded-md border border-[#2C1A1D]/5">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-[12px] font-bold text-[#2C1A1D]">{r.customerName}</p>
-                          <span className="text-[11px] text-[#2C1A1D]">{"★".repeat(r.rating)}</span>
+                {/* Frequently Bought Together (Mobile Only position) */}
+                {relatedProducts.length > 0 && (
+                  <div className="md:hidden mb-10">
+                    <h3 className="mb-4 text-[20px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+                      Frequently bought together
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {relatedProducts.map((p) => (
+                        <div key={p.id} className="group cursor-pointer">
+                          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-sm bg-[#EBE0D3] mb-2">
+                            <Image src={p.image} alt={p.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                          </div>
+                          <p className="text-[11px] font-semibold text-[#2C1A1D] truncate" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{p.title}</p>
+                          <p className="text-[10px] text-[#2C1A1D]/60">£{p.price.toLocaleString()}</p>
                         </div>
-                        <p className="text-[13px] text-[#2C1A1D]/70">"{r.comment}"</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {!showReviewForm ? (
-                  <button onClick={() => setShowReviewForm(true)} className="w-full rounded-md border border-[#2C1A1D] py-2.5 text-[10px] font-bold uppercase tracking-widest text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                    Write a Review
-                  </button>
-                ) : (
-                  <form onSubmit={handleReviewSubmit} className="flex flex-col gap-3 bg-white p-4 rounded-md border border-[#2C1A1D]/10">
-                    <input value={reviewName} onChange={e => setReviewName(e.target.value)} placeholder="Your Name" required className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
-                    <div className="flex items-center gap-2">
-                      <span className="text-[12px] text-[#2C1A1D]/60">Rating:</span>
-                      {[1,2,3,4,5].map(star => (
-                        <button type="button" key={star} onClick={() => setReviewRating(star)} className={`text-[16px] ${star <= reviewRating ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`}>★</button>
                       ))}
                     </div>
-                    <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Your review..." required rows={3} className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
-                    <div className="flex gap-2">
-                      <button type="submit" className="flex-1 bg-[#2C1A1D] text-white text-[11px] font-bold uppercase rounded py-2">Submit</button>
-                      <button type="button" onClick={() => setShowReviewForm(false)} className="px-4 text-[11px] font-bold uppercase text-[#2C1A1D]/50">Cancel</button>
-                    </div>
-                  </form>
+                  </div>
                 )}
-              </div>
 
+                {/* Reviews */}
+                <div>
+                  <h3 className="mb-6 text-[22px] font-normal text-[#2C1A1D] md:text-[26px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Reviews</h3>
+                  
+                  {reviews.length === 0 ? (
+                    <p className="text-[13px] text-[#2C1A1D]/50 mb-6">No reviews yet. Be the first to review this item.</p>
+                  ) : (
+                    <div className="flex flex-col gap-5 mb-6">
+                      {reviews.map(r => (
+                        <div key={r.id} className="bg-white p-4 rounded-md border border-[#2C1A1D]/5">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[12px] font-bold text-[#2C1A1D]">{r.customerName}</p>
+                            <span className="text-[11px] text-[#2C1A1D]">{"★".repeat(r.rating)}</span>
+                          </div>
+                          <p className="text-[13px] text-[#2C1A1D]/70">"{r.comment}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!showReviewForm ? (
+                    <button onClick={() => setShowReviewForm(true)} className="w-full rounded-md border border-[#2C1A1D] py-2.5 text-[10px] font-bold uppercase tracking-widest text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                      Write a Review
+                    </button>
+                  ) : (
+                    <form onSubmit={handleReviewSubmit} className="flex flex-col gap-3 bg-white p-4 rounded-md border border-[#2C1A1D]/10">
+                      <input value={reviewName} onChange={e => setReviewName(e.target.value)} placeholder="Your Name" required className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-[#2C1A1D]/60">Rating:</span>
+                        {[1,2,3,4,5].map(star => (
+                          <button type="button" key={star} onClick={() => setReviewRating(star)} className={`text-[16px] ${star <= reviewRating ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`}>★</button>
+                        ))}
+                      </div>
+                      <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Your review..." required rows={3} className="w-full rounded border border-[#2C1A1D]/20 px-3 py-2 text-[13px]" />
+                      <div className="flex gap-2">
+                        <button type="submit" className="flex-1 bg-[#2C1A1D] text-white text-[11px] font-bold uppercase rounded py-2">Submit</button>
+                        <button type="button" onClick={() => setShowReviewForm(false)} className="px-4 text-[11px] font-bold uppercase text-[#2C1A1D]/50">Cancel</button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+              </div>
             </div>
           </div>
         </div>
