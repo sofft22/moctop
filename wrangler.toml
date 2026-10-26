@@ -1,6 +1,7 @@
 name = "moctop"
-compatibility_date = "2024-09-23"
+compatibility_date = "2025-05-10" # <-- UPDATED
 compatibility_flags = ["nodejs_compat"]
+keep_names = false # <-- ADDED
 
 main = ".open-next/worker.js"
 assets = { directory = ".open-next/assets", binding = "ASSETS" }
@@ -8,4 +9,4 @@ assets = { directory = ".open-next/assets", binding = "ASSETS" }
 [[d1_databases]]
 binding = "DB"
 database_name = "mocktopia-db"
-database_id = "a84f1095-be04-4b25-afa2-074f9000ad20"
+database_id = "YOUR_ACTUAL_ID_HERE"
