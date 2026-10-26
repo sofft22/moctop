@@ -20,15 +20,32 @@ export function Header() {
   const [hidden, setHidden] = useState(false);
   const [heroHeight, setHeroHeight] = useState(0); 
 
+  // BANNER STATE
+  const [bannerText, setBannerText] = useState("");
+  const [bannerActive, setBannerActive] = useState(false);
+  const [isBannerClosed, setIsBannerClosed] = useState(false);
+
   const lastY = useRef(0);
   const ticking = useRef(false);
 
-  const HIDE_AFTER = 50; // Hide after scrolling down a little bit
+  const HIDE_AFTER = 50;
   const TOLERANCE = 5;
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  // FETCH BANNER DATA
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.bannerActive === 1 && data.bannerText) {
+          setBannerText(data.bannerText);
+          setBannerActive(true);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
@@ -41,7 +58,7 @@ export function Header() {
     const measure = () => {
       const el = document.getElementById('hero');
       if (el) setHeroHeight(el.offsetHeight);
-      else setHeroHeight(0); // If no hero, header is always solid
+      else setHeroHeight(0); 
     };
     setTimeout(measure, 100); 
     window.addEventListener('resize', measure);
@@ -59,7 +76,6 @@ export function Header() {
 
         setScrolled(y);
 
-        // Hide on scroll down, show on scroll up (Global for all pages)
         if (y > HIDE_AFTER && diff > TOLERANCE) {
           setHidden(true);
         } else if (diff < -TOLERANCE || y <= HIDE_AFTER) {
@@ -74,7 +90,6 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Only transparent if we are actually over the hero section
   const overHero = heroHeight > 0 && scrolled < heroHeight - 40; 
   const textClass = overHero ? 'text-white' : 'text-[#2C1A1D]';
 
@@ -88,7 +103,7 @@ export function Header() {
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: any) => {
-    if (item.href) return; // Let standard links work normally
+    if (item.href) return;
     
     e.preventDefault();
     setMobileMenuOpen(false);
@@ -110,10 +125,13 @@ export function Header() {
     }
   };
 
+  // Determine if we show the banner
+  const showBanner = bannerActive && !isBannerClosed;
+
   return (
     <>
       <header
-        className={`fixed left-0 right-0 top-0 z-40 transition-[background-color,border-color,transform,color] duration-300 ease-out ${
+        className={`fixed left-0 right-0 top-0 z-40 transition-[background-color,border-color,transform,color] duration-300 ease-out flex flex-col ${
           hidden ? '-translate-y-full' : 'translate-y-0'
         }`}
         style={{
@@ -121,8 +139,39 @@ export function Header() {
           borderBottom: overHero ? '1px solid transparent' : '1px solid rgba(44, 26, 29, 0.1)'
         }}
       >
+        {/* ANNOUNCEMENT BANNER (STACKED ON TOP) */}
+        {showBanner && (
+          <div className={`w-full flex h-[32px] items-center justify-center relative overflow-hidden transition-colors duration-300 ${overHero ? 'text-white' : 'text-[#2C1A1D]'}`}>
+            
+            {/* Fixed Speaker Icon */}
+            <div className="flex-shrink-0 px-4 z-10">
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+            </div>
+
+            {/* Moving Text */}
+            <div className="flex-1 overflow-hidden relative h-full flex items-center">
+              <div className="animate-marquee whitespace-nowrap absolute flex">
+                <span className="mx-4 text-[10px] font-bold uppercase tracking-[0.15em]">{bannerText}</span>
+                <span className="mx-4 text-[10px] font-bold uppercase tracking-[0.15em]">{bannerText}</span>
+                <span className="mx-4 text-[10px] font-bold uppercase tracking-[0.15em]">{bannerText}</span>
+                <span className="mx-4 text-[10px] font-bold uppercase tracking-[0.15em]">{bannerText}</span>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <button onClick={() => setIsBannerClosed(true)} className="flex-shrink-0 px-4 opacity-50 hover:opacity-100 z-10 transition-opacity">
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+            
+            {/* Subtle divider inside the header */}
+            {!overHero && <div className="absolute bottom-0 left-0 w-full h-[1px] bg-[#2C1A1D]/10" />}
+          </div>
+        )}
+
         {/* DESKTOP LAYOUT */}
-        <div className="mx-auto hidden h-[72px] max-w-7xl grid-cols-3 items-center px-8 lg:grid">
+        <div className="mx-auto hidden h-[72px] w-full max-w-7xl grid-cols-3 items-center px-8 lg:grid">
           
           <div className="flex justify-start">
             <Link href="/" className="flex items-center">
@@ -141,7 +190,6 @@ export function Header() {
                 key={item.label}
                 href={item.href || `/#${item.targetId}`}
                 onClick={(e) => handleNavClick(e, item)}
-                // LIGHTER, SMALLER, SOFTER DESKTOP NAV
                 className={`whitespace-nowrap text-[10px] font-normal tracking-[0.15em] uppercase transition-colors duration-300 hover:opacity-60 ${textClass}`}
                 style={{ fontFamily: 'var(--font-inter), sans-serif' }}
               >
@@ -174,7 +222,7 @@ export function Header() {
         </div>
 
         {/* MOBILE LAYOUT */}
-        <div className="mx-auto flex h-[56px] max-w-7xl items-center justify-between px-5 lg:hidden">
+        <div className="mx-auto flex h-[56px] w-full max-w-7xl items-center justify-between px-5 lg:hidden">
           <div className="flex w-16 items-center justify-start">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -231,7 +279,7 @@ export function Header() {
         <div 
           className={`absolute top-[56px] left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
             mobileMenuOpen ? 'max-h-[400px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
-          }`}
+          } ${showBanner ? 'top-[88px]' : 'top-[56px]'}`} // Adjust top position if banner is visible
         >
           <nav className="flex flex-col p-2">
             {NAV.map((item) => (
