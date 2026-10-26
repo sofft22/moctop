@@ -10,6 +10,10 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  
+  // State for the modal's status dropdown
+  const [newStatus, setNewStatus] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadOrders = async () => {
     if (localStorage.getItem("mocktopia_admin_logged_in") !== "true") {
@@ -19,7 +23,15 @@ export default function AdminOrdersPage() {
     setLoading(true);
     const res = await fetch("/api/orders");
     const data = await res.json();
-    setOrders(data);
+    
+    // Normalize old statuses just in case
+    const normalizedData = data.map((o: any) => {
+      let s = o.status || "Pending";
+      if (s === "Out for Delivery" || s === "In the Oven") s = "Shipping";
+      return { ...o, status: s };
+    });
+    
+    setOrders(normalizedData);
     setLoading(false);
   };
 
@@ -27,46 +39,48 @@ export default function AdminOrdersPage() {
     loadOrders();
   }, [router]);
 
-  const updateStatus = async (orderId: string, newStatus: string) => {
+  const handleOpenModal = (order: any) => {
+    setSelectedOrder(order);
+    setNewStatus(order.status || "Pending");
+  };
+
+  const handleSaveStatus = async () => {
+    if (!selectedOrder) return;
+    setIsSaving(true);
+    
     // Optimistic UI update
-    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
-    }
+    setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o));
     
     await fetch("/api/orders", {
       method: "PUT",
-      body: JSON.stringify({ orderId, status: newStatus }),
+      body: JSON.stringify({ orderId: selectedOrder.id, status: newStatus }),
     });
+    
+    setIsSaving(false);
+    setSelectedOrder(null);
   };
 
   // Filter Logic
   const filteredOrders = useMemo(() => {
     if (activeTab === "all") return orders;
-    if (activeTab === "pending") return orders.filter(o => o.status === "Pending" || !o.status);
-    if (activeTab === "shipping") return orders.filter(o => o.status === "Shipping" || o.status === "Out for Delivery");
+    if (activeTab === "pending") return orders.filter(o => o.status === "Pending");
+    if (activeTab === "shipping") return orders.filter(o => o.status === "Shipping");
     if (activeTab === "delivered") return orders.filter(o => o.status === "Delivered");
     return orders;
   }, [orders, activeTab]);
 
   // Counts for tabs
-  const pendingCount = orders.filter(o => o.status === "Pending" || !o.status).length;
-  const shippingCount = orders.filter(o => o.status === "Shipping" || o.status === "Out for Delivery").length;
+  const pendingCount = orders.filter(o => o.status === "Pending").length;
+  const shippingCount = orders.filter(o => o.status === "Shipping").length;
   const deliveredCount = orders.filter(o => o.status === "Delivered").length;
 
+  // 3-STEP TRACKER LOGIC (Synced exactly with our 3 statuses)
   const getStepStatus = (currentStatus: string, stepName: string) => {
-    const statusMap: any = {
-      "Pending": 0,
-      "Shipping": 1,
-      "Out for Delivery": 1,
-      "Delivered": 2
-    };
-    
+    const statusMap: any = { "Pending": 0, "Shipping": 1, "Delivered": 2 };
     const currentLevel = statusMap[currentStatus] || 0;
-    const stepLevel = ["Pending", "Packaged", "Delivered"].indexOf(stepName);
+    const stepLevel = ["Pending", "Shipping", "Delivered"].indexOf(stepName);
     
-    if (stepLevel < currentLevel) return "completed";
-    if (stepLevel === currentLevel) return "active";
+    if (stepLevel <= currentLevel) return "active";
     return "inactive";
   };
 
@@ -107,8 +121,9 @@ export default function AdminOrdersPage() {
           {filteredOrders.map((o) => (
             <li key={o.id} className="border-b border-[#2C1A1D]/10 transition-colors">
               
+              {/* SMART TABLE ROW */}
               <button 
-                onClick={() => setSelectedOrder(o)}
+                onClick={() => handleOpenModal(o)}
                 className="w-full flex items-center gap-4 py-4 px-2 hover:bg-white text-left transition-colors"
               >
                 <div className="w-full md:w-[120px] shrink-0">
@@ -124,10 +139,10 @@ export default function AdminOrdersPage() {
                 <div className="w-[100px] shrink-0">
                   <span className={`inline-block w-full text-center rounded-md border px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider ${
                     o.status === "Delivered" ? "border-green-200 bg-green-50 text-green-700" :
-                    o.status === "Shipping" || o.status === "Out for Delivery" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                    o.status === "Shipping" ? "border-blue-200 bg-blue-50 text-blue-700" :
                     "border-[#2C1A1D]/20 bg-[#EBE0D3] text-[#2C1A1D]"
                   }`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                    {o.status === "Out for Delivery" ? "Shipping" : (o.status || "Pending")}
+                    {o.status || "Pending"}
                   </span>
                 </div>
 
@@ -141,20 +156,22 @@ export default function AdminOrdersPage() {
         </ul>
       )}
 
-      {/* ===== PROFESSIONAL ORDER DETAILS MODAL ===== */}
+      {/* ===== FULL-SCREEN MOBILE MODAL ===== */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6" onClick={() => setSelectedOrder(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="relative flex h-full max-h-[90vh] w-full max-w-[700px] flex-col bg-[#FBF9F5] shadow-2xl rounded-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex bg-black/50 backdrop-blur-sm sm:p-6 items-end sm:items-center justify-center" onClick={() => setSelectedOrder(null)}>
+          
+          {/* On mobile: w-full h-full rounded-none. On desktop: max-w-[700px] rounded-xl */}
+          <div onClick={(e) => e.stopPropagation()} className="relative flex h-[100dvh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-[700px] flex-col bg-[#FBF9F5] shadow-2xl sm:rounded-xl overflow-hidden animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-200">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 bg-white px-6 py-4">
               <div>
                 <h2 className="text-[20px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order {selectedOrder.id}</h2>
                 <p className="text-[12px] text-[#2C1A1D]/50 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                  {new Date(selectedOrder.date).toLocaleDateString("en-NG", { weekday: 'long', day: "numeric", month: "long", year: "numeric" })} at {new Date(selectedOrder.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(selectedOrder.date).toLocaleDateString("en-NG", { weekday: 'long', day: "numeric", month: "long", year: "numeric" })}
                 </p>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FBF9F5] text-[#2C1A1D]/50 hover:text-[#2C1A1D] transition-colors">
+              <button onClick={() => setSelectedOrder(null)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FBF9F5] text-[#2C1A1D]/50 hover:text-[#2C1A1D] transition-colors">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
               </button>
             </div>
@@ -167,9 +184,9 @@ export default function AdminOrdersPage() {
                 <div className="relative flex justify-between">
                   <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
                   
-                  {["Pending", "Packaged", "Delivered"].map((step) => {
+                  {["Pending", "Shipping", "Delivered"].map((step) => {
                     const status = getStepStatus(selectedOrder.status || "Pending", step);
-                    const isActive = status === "active" || status === "completed";
+                    const isActive = status === "active";
                     return (
                       <div key={step} className="relative z-10 flex flex-col items-center gap-2">
                         <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all bg-[#FBF9F5] ${
@@ -199,12 +216,12 @@ export default function AdminOrdersPage() {
                     <p>{selectedOrder.address}</p>
                   </div>
 
-                  {/* Status Update Dropdown */}
+                  {/* Status Update Dropdown (Controlled by local state) */}
                   <div className="mt-4">
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Update Status</h4>
                     <select 
-                      value={selectedOrder.status} 
-                      onChange={(e) => updateStatus(selectedOrder.id, e.target.value)}
+                      value={newStatus} 
+                      onChange={(e) => setNewStatus(e.target.value)}
                       className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[13px] font-bold uppercase tracking-wider outline-none focus:border-[#2C1A1D] transition-colors"
                     >
                       <option value="Pending">Pending</option>
@@ -255,6 +272,19 @@ export default function AdminOrdersPage() {
 
               </div>
             </div>
+
+            {/* SAVE BUTTON (Pinned to bottom) */}
+            <div className="p-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
+              <button 
+                onClick={handleSaveStatus} 
+                disabled={isSaving || newStatus === selectedOrder.status}
+                className="w-full rounded-md bg-[#2C1A1D] py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5] transition-all hover:bg-[#1F1315] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
