@@ -16,7 +16,6 @@ export function ProductModal({ product, onClose }: Props) {
   const [qty, setQty] = useState(1);
   const [addedFlash, setAddedFlash] = useState(false);
   const [mainImgLoaded, setMainImgLoaded] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   
   // Reviews State
@@ -32,7 +31,6 @@ export function ProductModal({ product, onClose }: Props) {
   // Toggle State
   const isBulkAvailable = product?.isBulk === 1;
 
-  // Multiple Images Logic (Fallback to single image if array doesn't exist)
   const displayImages = product?.images && Array.isArray(product.images) ? product.images : [product?.image];
   const [activeImage, setActiveImage] = useState(displayImages[0]);
 
@@ -42,21 +40,17 @@ export function ProductModal({ product, onClose }: Props) {
       setQty(1);
       setMainImgLoaded(false);
       setAddedFlash(false);
-      setCopied(false);
       setIsLightboxOpen(false);
       setShowReviewForm(false);
       
-      // Set initial image
       const initialImg = product?.images && Array.isArray(product.images) ? product.images[0] : product.image;
       setActiveImage(initialImg);
 
-      // Fetch approved reviews
       fetch("/api/reviews").then(res => res.json()).then(data => {
         const productReviews = data.filter((r: any) => r.productId === product.id && r.approved === 1);
         setReviews(productReviews);
       });
 
-      // Fetch related products
       fetch("/api/products").then(res => res.json()).then(data => {
         const others = data.filter((p: any) => p.id !== product.id && p.inStock === 1);
         const shuffled = others.sort(() => 0.5 - Math.random());
@@ -90,12 +84,6 @@ export function ProductModal({ product, onClose }: Props) {
     window.open(`https://wa.me/2348178910628?text=${message}`, '_blank');
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await fetch("/api/reviews", {
@@ -116,10 +104,10 @@ export function ProductModal({ product, onClose }: Props) {
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8" onClick={onClose}>
-        <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[1200px] md:rounded-lg overflow-hidden">
+        <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[1100px] md:rounded-lg overflow-hidden">
           
           {/* HEADER */}
-          <header className="relative z-10 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5] shrink-0">
+          <header className="relative z-20 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5] shrink-0">
             <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
               <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -138,19 +126,19 @@ export function ProductModal({ product, onClose }: Props) {
             <div className="flex w-full flex-col md:flex-row">
               
               {/* LEFT COLUMN: Image & Related */}
-              <div className="w-full md:w-1/2 shrink-0 flex flex-col">
+              <div className="w-full md:w-1/2 shrink-0 flex flex-col bg-[#EBE0D3]">
                 
-                {/* Main Image (Increased Height) */}
-                <div className="relative w-full bg-[#EBE0D3]">
-                  <div className="relative h-[55vh] w-full cursor-zoom-in overflow-hidden sm:h-[450px]" onClick={() => setIsLightboxOpen(true)}>
+                {/* Main Image (Taller, no overlay) */}
+                <div className="relative w-full h-[60vh] sm:h-[600px]">
+                  <div className="relative w-full h-full cursor-zoom-in" onClick={() => setIsLightboxOpen(true)}>
                     {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
                     <Image src={activeImage} alt={product.title} fill className="object-cover" onLoad={() => setMainImgLoaded(true)} priority />
                   </div>
                 </div>
 
-                {/* Thumbnail Gallery (For future multiple images) */}
+                {/* Thumbnails */}
                 {displayImages.length > 1 && (
-                  <div className="flex gap-2 p-4 overflow-x-auto">
+                  <div className="flex gap-2 p-4 bg-white border-t border-[#2C1A1D]/10 overflow-x-auto">
                     {displayImages.map((img: string, i: number) => (
                       <button key={i} onClick={() => setActiveImage(img)} className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 ${activeImage === img ? 'border-[#2C1A1D]' : 'border-transparent'}`}>
                         <Image src={img} alt="Thumbnail" fill className="object-cover" />
@@ -191,13 +179,18 @@ export function ProductModal({ product, onClose }: Props) {
                 
                 <hr className="mb-8 border-[#2C1A1D]/10" />
 
-                {/* Sizes */}
+                {/* Sizes (Slimmer and Smarter) */}
                 {sizes.length > 0 && (
                   <div className="mb-8">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Select Size</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {sizes.map((size: string) => (
-                        <button key={size} onClick={() => setSelectedSize(size)} className={`flex min-h-[44px] items-center justify-center px-2 py-2 text-[11px] font-bold uppercase tracking-wide transition-all border rounded-md ${selectedSize === size ? "bg-[#2C1A1D]/70 border-[#2C1A1D]/70 text-[#FBF9F5]" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                        <button 
+                          key={size} 
+                          onClick={() => setSelectedSize(size)} 
+                          className={`flex h-[44px] items-center justify-center px-4 text-[10px] font-bold uppercase tracking-wide transition-all border rounded-md ${selectedSize === size ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5"}`} 
+                          style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+                        >
                           {size}
                         </button>
                       ))}
@@ -206,9 +199,8 @@ export function ProductModal({ product, onClose }: Props) {
                 )}
 
                 {/* DUAL CTAs */}
-                <div className="flex flex-col gap-3 mb-10">
-                  {/* 1. Add to Bag (Always visible) */}
-                  <div className="flex items-center gap-4 mb-2">
+                <div className="flex flex-col gap-4 mb-10">
+                  <div className="flex items-center gap-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
                     <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[#2C1A1D]/20 bg-white">
                       <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white">−</button>
@@ -217,15 +209,14 @@ export function ProductModal({ product, onClose }: Props) {
                     </div>
                   </div>
 
-                  <button onClick={handleAdd} className={`w-full rounded-md py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                  <button onClick={handleAdd} className={`w-full rounded-md py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                     {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toLocaleString()}`}
                   </button>
 
-                  {/* 2. Bulk Order CTA (Only shows if isBulk is true) */}
                   {isBulkAvailable && (
                     <button 
                       onClick={handleBulkQuote}
-                      className="w-full rounded-md border border-[#2C1A1D] py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#2C1A1D] hover:text-white"
+                      className="w-full rounded-md border border-[#2C1A1D] py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#2C1A1D] hover:text-white"
                       style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
                     >
                       Request Bulk Quote
