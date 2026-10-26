@@ -4,14 +4,14 @@ import { products } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
-  const db = getDb(process.env);
+  const db = getDb();
   const allProducts = await db.select().from(products);
   return NextResponse.json(allProducts);
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const db = getDb(process.env);
+  const db = getDb();
   
   await db.insert(products).values({
     id: `p-${Date.now()}`,
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   const body = await request.json();
-  const db = getDb(process.env);
+  const db = getDb();
   
   await db.update(products)
     .set({
@@ -55,7 +55,7 @@ export async function DELETE(request: Request) {
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
 
-  const db = getDb(process.env);
+  const db = getDb();
   await db.delete(products).where(eq(products.id, id));
   return NextResponse.json({ success: true });
 }
