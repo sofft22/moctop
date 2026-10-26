@@ -82,7 +82,7 @@ export function Header() {
     { label: 'Categories', targetId: 'categories' },
     { label: 'Shop', href: '/shop' },
     { label: 'My Orders', href: '/my-orders' },
-    { label: 'About Us', targetId: 'about' },
+    { label: 'About Us', targetId: 'about' }, // Assuming your OurStory section has id="about"
     { label: 'Contact', targetId: 'footer' },
   ];
 
@@ -141,7 +141,8 @@ export function Header() {
                 key={item.label}
                 href={item.href || `/#${item.targetId}`}
                 onClick={(e) => handleNavClick(e, item)}
-                className={`whitespace-nowrap text-[11.5px] font-medium uppercase tracking-[0.16em] transition-colors duration-300 hover:opacity-60 ${textClass}`}
+                // LIGHTER & SMALLER DESKTOP NAV
+                className={`whitespace-nowrap text-[10px] lg:text-[11px] font-light uppercase tracking-[0.18em] transition-colors duration-300 hover:opacity-60 ${textClass}`}
                 style={{ fontFamily: 'var(--font-inter), sans-serif' }}
               >
                 {item.label}
@@ -226,7 +227,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* MOBILE DROPDOWN MENU */}
+        {/* NEW BOXED MOBILE DROPDOWN MENU (Like the Category dropdown) */}
         <div 
           className={`absolute top-[56px] left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
             mobileMenuOpen ? 'max-h-[400px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
@@ -248,6 +249,7 @@ export function Header() {
         </div>
       </header>
       
+      {/* MOBILE OVERLAY (Closes menu when clicking outside) */}
       <div 
         className={`fixed inset-0 z-30 bg-black/20 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
