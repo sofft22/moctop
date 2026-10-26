@@ -5,7 +5,7 @@ import { desc, eq } from "drizzle-orm";
 
 // GET all orders (Admin & My Orders page)
 export async function GET() {
-  const db = getDb(process.env);
+  const db = getDb();
   const allOrders = await db.select().from(orders).orderBy(desc(orders.date));
   return NextResponse.json(allOrders);
 }
@@ -13,7 +13,7 @@ export async function GET() {
 // POST new order (from Checkout)
 export async function POST(request: Request) {
   const body = await request.json();
-  const db = getDb(process.env);
+  const db = getDb();
   
   await db.insert(orders).values({
     id: body.orderId,
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 // PUT update order status (from Admin)
 export async function PUT(request: Request) {
   const body = await request.json();
-  const db = getDb(process.env);
+  const db = getDb();
   
   await db.update(orders)
     .set({ status: body.status })
