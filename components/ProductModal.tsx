@@ -28,34 +28,55 @@ export function ProductModal({ product, onClose }: Props) {
   // Frequently Bought Together State
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
 
-  // Toggle State
-  const isBulkAvailable = product?.isBulk === 1;
+  // Safe parsing of sizes
+  let parsedSizes: string[] = [];
+  try {
+    if (product?.sizes) {
+      const parsed = JSON.parse(product.sizes);
+      if (Array.isArray(parsed)) parsedSizes = parsed;
+    }
+  } catch (e) {
+    console.error("Failed to parse sizes", e);
+  }
 
-  const displayImages = product?.images && Array.isArray(product.images) ? product.images : [product?.image];
-  const [activeImage, setActiveImage] = useState(displayImages[0]);
+  // Safe parsing of images
+  let displayImages: string[] = [];
+  try {
+    if (product?.images) {
+      const parsed = JSON.parse(product.images);
+      if (Array.isArray(parsed) && parsed.length > 0) displayImages = parsed;
+    }
+  } catch (e) {}
+  
+  if (displayImages.length === 0 && product?.image) {
+    displayImages = [product.image];
+  }
+
+  const [activeImage, setActiveImage] = useState(displayImages[0] || "");
+
+  const isSoldOut = product?.inStock === 0;
+  const isBulkAvailable = product?.isBulk === 1;
 
   useEffect(() => {
     if (product) {
-      setSelectedSize(product.sizes ? JSON.parse(product.sizes)[0] : "");
+      setSelectedSize(parsedSizes.length > 0 ? parsedSizes[0] : "");
       setQty(1);
       setMainImgLoaded(false);
       setAddedFlash(false);
       setIsLightboxOpen(false);
       setShowReviewForm(false);
-      
-      const initialImg = product?.images && Array.isArray(product.images) ? product.images[0] : product.image;
-      setActiveImage(initialImg);
+      setActiveImage(displayImages[0] || "");
 
       fetch("/api/reviews").then(res => res.json()).then(data => {
         const productReviews = data.filter((r: any) => r.productId === product.id && r.approved === 1);
         setReviews(productReviews);
-      });
+      }).catch(() => {});
 
       fetch("/api/products").then(res => res.json()).then(data => {
         const others = data.filter((p: any) => p.id !== product.id && p.inStock === 1);
         const shuffled = others.sort(() => 0.5 - Math.random());
         setRelatedProducts(shuffled.slice(0, 4));
-      });
+      }).catch(() => {});
     }
   }, [product]);
 
@@ -70,10 +91,10 @@ export function ProductModal({ product, onClose }: Props) {
 
   if (!product) return null;
 
-  const sizes = product.sizes ? JSON.parse(product.sizes) : [];
   const totalPrice = product.price * qty;
 
   const handleAdd = () => {
+    if (isSoldOut) return;
     addToCart(product, selectedSize, qty); 
     setAddedFlash(true);
     setTimeout(() => setAddedFlash(false), 2000);
@@ -113,13 +134,10 @@ export function ProductModal({ product, onClose }: Props) {
     <>
       <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8" onClick={onClose}>
         
-        {/* MODAL CONTAINER */}
         <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[92vh] md:max-w-[980px] md:rounded-xl overflow-hidden">
           
-          {/* SCROLLABLE CONTAINER */}
           <div className="flex w-full flex-1 flex-col overflow-y-auto overscroll-contain transform-gpu">
             
-            {/* HEADER (Restored, Visible, Scrolls Normally) */}
             <header className="relative z-20 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5]">
               <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
                 <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D] transition-colors">
@@ -133,26 +151,33 @@ export function ProductModal({ product, onClose }: Props) {
               </div>
             </header>
 
-            {/* 1. TOP SECTION (Image Left, Details Right) */}
             <div className="flex w-full flex-col md:flex-row border-b border-[#2C1A1D]/10">
               
-              {/* LEFT COLUMN: Taller Image */}
+              {/* LEFT COLUMN: Taller Image with Sold Out Badge */}
               <div className="w-full md:w-1/2 shrink-0 flex flex-col bg-[#EBE0D3]">
                 <div className="relative w-full h-[60vh] sm:h-[650px]">
                   <div className="relative w-full h-full cursor-zoom-in group" onClick={() => setIsLightboxOpen(true)}>
                     {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
                     <Image 
-                      src={activeImage} 
+                      src={activeImage || "/placeholder.png"} 
                       alt={product.title} 
                       fill 
-                      className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                      className={`object-cover transition-transform duration-700 group-hover:scale-105 ${isSoldOut ? 'opacity-80 grayscale-[50%]' : ''}`}
                       onLoad={() => setMainImgLoaded(true)} 
                       priority 
                     />
+                    
+                    {/* SOLD OUT BADGE ON IMAGE */}
+                    {isSoldOut && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                        <span className="bg-white/90 px-6 py-2 text-[14px] font-bold uppercase tracking-widest text-[#2C1A1D] rounded-sm shadow-sm">
+                          Sold Out
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
-                {/* Thumbnails */}
                 {displayImages.length > 1 && (
                   <div className="flex gap-2 p-4 bg-white border-t border-[#2C1A1D]/10 overflow-x-auto">
                     {displayImages.map((img: string, i: number) => (
@@ -175,12 +200,12 @@ export function ProductModal({ product, onClose }: Props) {
                 
                 <hr className="mb-8 border-[#2C1A1D]/10" />
 
-                {/* Sizes (3 per row) */}
-                {sizes.length > 0 && (
+                {/* Sizes */}
+                {parsedSizes.length > 0 && (
                   <div className="mb-8">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Select Size</p>
                     <div className="grid grid-cols-3 gap-2">
-                      {sizes.map((size: string) => (
+                      {parsedSizes.map((size: string) => (
                         <button 
                           key={size} 
                           onClick={() => setSelectedSize(size)} 
@@ -194,29 +219,37 @@ export function ProductModal({ product, onClose }: Props) {
                   </div>
                 )}
 
-                {/* CTAs */}
+                {/* CTAs (Hidden or Disabled if Sold Out) */}
                 <div className="flex flex-col gap-4 mb-8">
-                  <div className="flex items-center gap-4">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
-                    <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[#2C1A1D]/20 bg-white">
-                      <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white transition-colors">−</button>
-                      <span className="flex h-10 w-12 items-center justify-center text-[13px] font-bold text-[#2C1A1D]">{qty}</span>
-                      <button onClick={() => setQty(qty + 1)} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white transition-colors">+</button>
+                  {!isSoldOut && (
+                    <div className="flex items-center gap-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
+                      <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[#2C1A1D]/20 bg-white">
+                        <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white transition-colors">−</button>
+                        <span className="flex h-10 w-12 items-center justify-center text-[13px] font-bold text-[#2C1A1D]">{qty}</span>
+                        <button onClick={() => setQty(qty + 1)} className="flex h-10 w-10 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-white transition-colors">+</button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <button onClick={handleAdd} className={`w-full rounded-md py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5] scale-[0.98]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                    {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toLocaleString()}`}
-                  </button>
+                  {isSoldOut ? (
+                    <button disabled className="w-full rounded-md py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] bg-[#2C1A1D]/10 text-[#2C1A1D]/40 cursor-not-allowed" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                      Sold Out
+                    </button>
+                  ) : (
+                    <button onClick={handleAdd} className={`w-full rounded-md py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5] scale-[0.98]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                      {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toLocaleString()}`}
+                    </button>
+                  )}
 
-                  {isBulkAvailable && (
+                  {isBulkAvailable && !isSoldOut && (
                     <button onClick={handleBulkQuote} className="w-full rounded-md border border-[#2C1A1D] py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#2C1A1D] hover:text-white" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                       Request Bulk Quote
                     </button>
                   )}
                 </div>
 
-                {/* Share Section (Official Icon) */}
+                {/* Share Section */}
                 <div className="flex items-center gap-4 mt-auto pt-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Share</p>
                   <div className="flex gap-3">
@@ -309,7 +342,7 @@ export function ProductModal({ product, onClose }: Props) {
       {/* LIGHTBOX */}
       {isLightboxOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md" onClick={() => setIsLightboxOpen(false)}>
-          <Image src={activeImage} alt={product.title} fill className="object-contain" />
+          <Image src={activeImage || "/placeholder.png"} alt={product.title} fill className="object-contain" />
           <button className="absolute left-6 top-6 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md hover:bg-white/20 transition-all">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
