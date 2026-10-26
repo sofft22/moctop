@@ -9,4 +9,4 @@ assets = { directory = ".open-next/assets", binding = "ASSETS" }
 [[d1_databases]]
 binding = "DB"
 database_name = "mocktopia-db"
-database_id = "YOUR_ACTUAL_ID_HERE"
+database_id = "a84f1095-be04-4b25-afa2-074f9000ad20"
