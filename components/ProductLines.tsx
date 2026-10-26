@@ -6,28 +6,28 @@ export function ProductLines() {
     {
       id: "banana-bread",
       title: "Banana Bread",
-      description: "Classic, choc chip, walnut & more.", // <-- ADD YOUR TEXT HERE
+      description: "Available in boxes of 6 or 8, and MIDI or Maxi loaves. Customize with coconut, Oreos, Nutella, and more.",
       image: "/category-banana-bread.png", 
       link: "/shop"
     },
     {
       id: "puff-puffs",
       title: "Puff Puffs",
-      description: "Golden, fluffy, and perfectly sweet.", // <-- ADD YOUR TEXT HERE
+      description: "Golden, fluffy, and perfectly sweet. Available in classic or party boxes.",
       image: "/category-puff-puffs.png",
       link: "/shop"
     },
     {
       id: "mocktails",
       title: "Mocktails",
-      description: "Hibiscus, strawberry, ginger & more.", // <-- ADD YOUR TEXT HERE
+      description: "Refreshing hibiscus, sweet strawberry, and spicy ginger blends. Perfect for any occasion.",
       image: "/category-mocktails.png",
       link: "/shop"
     }
   ];
 
   return (
-    <section id="categories" className="w-full bg-[#FBF9F5] py-16 px-4 md:py-24 md:px-6">
+    <section id="categories" className="w-full bg-[#FBF9F5] py-16 px-6 md:py-24 md:px-12">
       <div className="mx-auto max-w-[1400px]">
         
         {/* Header */}
@@ -41,46 +41,46 @@ export function ProductLines() {
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {categories.map((cat) => (
             <Link 
               key={cat.id} 
               href={cat.link}
-              className="group relative w-full overflow-hidden rounded-md aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] bg-[#EBE0D3]"
+              className="group flex flex-col bg-white rounded-md overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-              <Image
-                src={cat.image}
-                alt={cat.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-              />
+              {/* Image (Shorter Aspect Ratio) */}
+              <div className="relative w-full aspect-[4/3] bg-[#EBE0D3] overflow-hidden">
+                <Image
+                  src={cat.image}
+                  alt={cat.title}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
               
-              {/* Dark Overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2C1A1D]/95 via-[#2C1A1D]/40 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-90" />
-              
-              {/* Text content at the bottom */}
-              <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex flex-col items-start">
+              {/* Text Section Below Image */}
+              <div className="flex flex-col p-6 md:p-8">
                 
-                {/* Title and Arrow */}
-                <div className="flex w-full items-center justify-between">
+                {/* Title and Hover Arrow */}
+                <div className="flex items-center justify-between mb-3">
                   <h3 
-                    className="text-[28px] text-[#FBF9F5] md:text-[32px] leading-tight"
+                    className="text-[24px] text-[#2C1A1D] md:text-[28px] leading-tight"
                     style={{ fontFamily: 'var(--font-dm-serif), serif' }}
                   >
                     {cat.title}
                   </h3>
                   
-                  {/* Just the arrow */}
-                  <span className="text-[#FBF9F5] transition-transform duration-300 group-hover:translate-x-1">
+                  {/* Arrow only shows on hover */}
+                  <span className="text-[#2C1A1D] opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </span>
                 </div>
 
-                {/* The text you wanted under each item */}
+                {/* Description */}
                 <p 
-                  className="mt-2 text-[13px] text-[#FBF9F5]/70 md:text-[14px]"
+                  className="text-[13px] leading-[1.6] text-[#2C1A1D]/60 md:text-[14px]"
                   style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   {cat.description}
