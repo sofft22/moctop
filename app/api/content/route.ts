@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 // GET content
 export async function GET() {
-  const db = getDb(process.env);
+  const db = getDb();
   const result = await db.select().from(content).where(eq(content.id, 1));
   return NextResponse.json(result[0] || {});
 }
@@ -13,7 +13,7 @@ export async function GET() {
 // POST update content
 export async function POST(request: Request) {
   const body = await request.json();
-  const db = getDb(process.env);
+  const db = getDb();
   
   await db.update(content)
     .set({
