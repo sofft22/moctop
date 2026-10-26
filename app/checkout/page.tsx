@@ -66,7 +66,7 @@ export default function CheckoutPage() {
     }
 
     const orderId = `MCK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const items = cart.map(item => ({
+    const items = cart.map((item: any) => ({
       id: item.id,
       title: item.title,
       price: typeof item.price === "number" ? item.price : parseInt(String(item.price).replace(/[^0-9]/g, ""), 10),
