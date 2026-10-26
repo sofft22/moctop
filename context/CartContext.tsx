@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useSyncExternalStore } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface CartItem {
   cartId: string;
@@ -25,61 +25,50 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Custom event to trigger updates across the app
-const dispatchCartUpdate = () => {
-  window.dispatchEvent(new Event("cart-update"));
-};
-
-const subscribe = (callback: () => void) => {
-  window.addEventListener("cart-update", callback);
-  window.addEventListener("storage", callback); // Syncs across tabs
-  return () => {
-    window.removeEventListener("cart-update", callback);
-    window.removeEventListener("storage", callback);
-  };
-};
-
-const getSnapshot = () => {
-  return localStorage.getItem("mocktopia_cart") || "[]";
-};
-
-const getServerSnapshot = () => {
-  return "[]"; // Always empty on the server
-};
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  // useSyncExternalStore guarantees the server and client stay in sync
-  const cartString = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  
-  // Parse the string from localStorage into an array
-  let cart: CartItem[] = [];
-  try {
-    const parsed = JSON.parse(cartString);
-    if (Array.isArray(parsed)) cart = parsed;
-  } catch (e) {}
-
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const saveCart = (newCart: CartItem[]) => {
-    localStorage.setItem("mocktopia_cart", JSON.stringify(newCart));
-    dispatchCartUpdate(); // Tell React to re-render with the new data
-  };
+  // 1. On first load, read from localStorage ONLY after the browser is ready
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const savedCart = localStorage.getItem("mocktopia_cart");
+      if (savedCart) {
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed)) {
+          setCart(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load cart", e);
+    }
+  }, []);
+
+  // 2. Whenever the cart changes, save it to localStorage (but ONLY if we are mounted)
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem("mocktopia_cart", JSON.stringify(cart));
+    }
+  }, [cart, isMounted]);
 
   const addToCart = (product: any, size: string, qty: number) => {
-    const existingItem = cart.find(
-      (item) => item.id === product.id && item.size === size
-    );
-
-    let newCart;
-    if (existingItem) {
-      newCart = cart.map((item) =>
-        item.id === product.id && item.size === size
-          ? { ...item, qty: item.qty + qty }
-          : item
+    setCart((prevCart) => {
+      const existingItem = prevCart.find(
+        (item) => item.id === product.id && item.size === size
       );
-    } else {
-      newCart = [
-        ...cart,
+
+      if (existingItem) {
+        return prevCart.map((item) =>
+          item.id === product.id && item.size === size
+            ? { ...item, qty: item.qty + qty }
+            : item
+        );
+      }
+
+      return [
+        ...prevCart,
         {
           ...product,
           cartId: `${product.id}-${size}-${Date.now()}`,
@@ -87,19 +76,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
           qty,
         },
       ];
-    }
-    
-    saveCart(newCart);
-    setIsCartOpen(true);
+    });
+    setIsCartOpen(true); 
   };
 
   const removeFromCart = (cartId: string) => {
-    const newCart = cart.filter((item) => item.cartId !== cartId);
-    saveCart(newCart);
+    setCart((prevCart) => prevCart.filter((item) => item.cartId !== cartId));
   };
 
   const clearCart = () => {
-    saveCart([]);
+    setCart([]);
+    localStorage.removeItem("mocktopia_cart");
   };
 
   const cartTotal = cart.reduce((total, item) => total + item.price * item.qty, 0);
