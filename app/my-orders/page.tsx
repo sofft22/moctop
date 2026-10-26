@@ -22,7 +22,7 @@ export default function MyOrdersPage() {
 
     if (myOrderIds.length === 0) {
       setLoading(false);
-      return; // If they have no orders on this phone, stop loading
+      return;
     }
 
     // 2. Fetch orders from API
@@ -202,6 +202,15 @@ export default function MyOrdersPage() {
                           <div className="flex flex-col items-end gap-2 border-t border-[#2C1A1D]/10 pt-4 text-[13px] text-[#2C1A1D]/70">
                             <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{order.subtotal?.toLocaleString()}</span></div>
                             <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{order.deliveryFee?.toLocaleString()}</span></div>
+                            
+                            {/* DISCOUNT ROW (SCREEN) */}
+                            {order.discountAmount > 0 && (
+                              <div className="flex justify-between w-full max-w-[200px] text-green-600 font-bold">
+                                <span>Discount {order.promoCode ? `(${order.promoCode})` : ""}:</span>
+                                <span>-£{order.discountAmount.toLocaleString()}</span>
+                              </div>
+                            )}
+
                             <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2"><span>Total:</span><span>£{order.total?.toLocaleString()}</span></div>
                           </div>
                         </div>
@@ -291,6 +300,15 @@ export default function MyOrdersPage() {
             <div className="flex flex-col items-end gap-3 border-t-2 border-[#2C1A1D]/10 pt-4 mb-10">
               <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{pdfOrder.subtotal?.toLocaleString()}</span></div>
               <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{pdfOrder.deliveryFee?.toLocaleString()}</span></div>
+              
+              {/* DISCOUNT ROW (PDF) */}
+              {pdfOrder.discountAmount > 0 && (
+                <div className="flex justify-between w-full max-w-[300px] text-[14px] text-green-600 font-bold">
+                  <span>Discount {pdfOrder.promoCode ? `(${pdfOrder.promoCode})` : ""}:</span>
+                  <span>-£{pdfOrder.discountAmount.toLocaleString()}</span>
+                </div>
+              )}
+
               <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{pdfOrder.total?.toLocaleString()}</span></div>
             </div>
 
