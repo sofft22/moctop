@@ -54,7 +54,8 @@ export function CartDrawer() {
                           <span className="flex h-8 w-10 items-center justify-center text-[12px] font-bold text-[#2C1A1D]">{item.qty}</span>
                           <button onClick={() => updateQty(item.cartId, item.qty + 1)} className="flex h-8 w-8 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-[#FBF9F5]">+</button>
                         </div>
-                        <p className="text-[13px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>₦{(itemPrice * item.qty).toLocaleString()}</p>
+                        {/* CURRENCY CONVERTED TO £ */}
+                        <p className="text-[13px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>£{(itemPrice * item.qty).toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -66,13 +67,13 @@ export function CartDrawer() {
 
         {/* Footer */}
         {cart.length > 0 && (
-          <div className="border-t border-[#2C1A1D]/10 px-6 py-6">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="border-t border-[#2C1A1D]/10 px-6 py-6 flex flex-col gap-3">
+            <div className="mb-2 flex items-center justify-between">
               <span className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Subtotal</span>
-              <span className="text-[18px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>₦{cartTotal.toLocaleString()}</span>
+              {/* CURRENCY CONVERTED TO £ */}
+              <span className="text-[18px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>£{cartTotal.toLocaleString()}</span>
             </div>
             
-            {/* CHANGED TO LINK TO /checkout */}
             <Link 
               href="/checkout"
               onClick={() => setIsCartOpen(false)}
@@ -81,6 +82,13 @@ export function CartDrawer() {
             >
               Checkout
             </Link>
+            <button 
+              onClick={() => setIsCartOpen(false)}
+              className="block w-full rounded-md border border-[#2C1A1D]/20 py-3.5 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#2C1A1D]/5"
+              style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+            >
+              Continue Shopping
+            </button>
           </div>
         )}
       </div>
