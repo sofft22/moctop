@@ -18,6 +18,9 @@ export function ProductModal({ product, onClose }: Props) {
   const [mainImgLoaded, setMainImgLoaded] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   
+  // Header Visibility State
+  const [showHeader, setShowHeader] = useState(false);
+
   // Reviews State
   const [reviews, setReviews] = useState<any[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -25,7 +28,7 @@ export function ProductModal({ product, onClose }: Props) {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
 
-  // Frequently Bought Together State
+  // Related Products State
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
 
   // Toggle State
@@ -40,6 +43,7 @@ export function ProductModal({ product, onClose }: Props) {
       setQty(1);
       setMainImgLoaded(false);
       setAddedFlash(false);
+      setShowHeader(false); // Reset header on new product
       setIsLightboxOpen(false);
       setShowReviewForm(false);
       
@@ -76,11 +80,15 @@ export function ProductModal({ product, onClose }: Props) {
   const handleAdd = () => {
     addToCart(product, selectedSize, qty); 
     setAddedFlash(true);
-    setTimeout(() => setAddedFlash(false), 2000);
+    setShowHeader(true); // Reveal header on add to cart
+    setTimeout(() => {
+      setAddedFlash(false);
+      // We leave the header visible after adding, so they can check out.
+    }, 2000);
   };
 
   const handleBulkQuote = () => {
-    const message = `Hi Mocktopia! I'd like to request a bulk quote for:%0A%0A*Product:* ${product.title}%0A*Size:* ${selectedSize}%0A%0APlease let me know the pricing and availability.`;
+    const message = `Hi! I'd like to request a bulk quote for:%0A%0A*Product:* ${product.title}%0A*Size:* ${selectedSize}%0A%0APlease let me know the pricing and availability.`;
     window.open(`https://wa.me/2348178910628?text=${message}`, '_blank');
   };
 
@@ -101,43 +109,48 @@ export function ProductModal({ product, onClose }: Props) {
     alert("Thank you! Your review has been submitted and is pending approval.");
   };
 
+  // Share Logic
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}?product=${product.id}` : "";
+  
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shareUrl);
+    alert("Link copied to clipboard!");
+  };
+
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8" onClick={onClose}>
-        <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[1100px] md:rounded-lg overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#1F1315]/80 backdrop-blur-sm md:p-8 lg:p-12" onClick={onClose}>
+        
+        {/* MODAL CONTAINER: Reduced width (max-w-[950px]) and tightened height */}
+        <div onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full flex-col bg-[#FBF9F5] shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-[950px] md:rounded-lg overflow-hidden">
           
-          {/* SCROLLABLE CONTAINER (Header is INSIDE so it scrolls away) */}
-          <div className="flex w-full flex-1 flex-col overflow-y-auto overscroll-contain">
-            
-            {/* 1. HEADER (Not sticky) */}
-            <header className="relative z-10 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5]">
-              <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
-                <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
-                </button>
-                <span className="uppercase tracking-[0.15em] text-[#2C1A1D] text-[16px] font-semibold" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>Mocktopia</span>
-                <button onClick={() => setIsCartOpen(true)} className="relative text-[#2C1A1D]">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>
-                  {cartCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#2C1A1D] text-[9px] text-white">{cartCount}</span>}
-                </button>
-              </div>
-            </header>
+          {/* HEADER (Conditionally rendered based on showHeader state) */}
+          <header className={`relative z-20 flex w-full flex-col border-b border-[#2C1A1D]/10 bg-[#FBF9F5] transition-all duration-300 ${showHeader ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-full absolute pointer-events-none"}`}>
+            <div className="mx-auto flex h-[60px] w-full items-center justify-between px-6">
+              <button onClick={onClose} className="text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+              <span className="uppercase tracking-[0.15em] text-[#2C1A1D] text-[16px] font-semibold" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>Mocktopia</span>
+              <button onClick={() => setIsCartOpen(true)} className="relative text-[#2C1A1D]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 8h12l-1 12H7L6 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>
+                {cartCount > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#2C1A1D] text-[9px] text-white">{cartCount}</span>}
+              </button>
+            </div>
+          </header>
 
-            {/* 2. BODY */}
+          {/* SCROLLABLE BODY */}
+          <div className="flex w-full flex-1 overflow-y-auto overscroll-contain">
+            
             <div className="flex w-full flex-col md:flex-row">
               
-              {/* LEFT COLUMN: Image & Related */}
+              {/* LEFT COLUMN: Image */}
               <div className="w-full md:w-1/2 shrink-0 flex flex-col bg-[#EBE0D3]">
-                
-                {/* Main Image */}
-                <div className="relative w-full h-[60vh] sm:h-[600px]">
+                <div className="relative w-full h-[50vh] sm:h-[500px] lg:h-[600px]">
                   <div className="relative w-full h-full cursor-zoom-in" onClick={() => setIsLightboxOpen(true)}>
                     {!mainImgLoaded && <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />}
                     <Image src={activeImage} alt={product.title} fill className="object-cover" onLoad={() => setMainImgLoaded(true)} priority />
                   </div>
                 </div>
-
-                {/* Thumbnails */}
                 {displayImages.length > 1 && (
                   <div className="flex gap-2 p-4 bg-white border-t border-[#2C1A1D]/10 overflow-x-auto">
                     {displayImages.map((img: string, i: number) => (
@@ -147,30 +160,11 @@ export function ProductModal({ product, onClose }: Props) {
                     ))}
                   </div>
                 )}
-
-                {/* Frequently Bought Together (Desktop) */}
-                {relatedProducts.length > 0 && (
-                  <div className="hidden md:block p-6 bg-[#FBF9F5]">
-                    <h3 className="mb-4 text-[20px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
-                      Frequently bought together
-                    </h3>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                      {relatedProducts.map((p) => (
-                        <div key={p.id} className="group cursor-pointer">
-                          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-sm bg-[#EBE0D3] mb-2">
-                            <Image src={p.image} alt={p.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                          </div>
-                          <p className="text-[11px] font-semibold text-[#2C1A1D] truncate" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{p.title}</p>
-                          <p className="text-[10px] text-[#2C1A1D]/60">£{p.price.toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* RIGHT COLUMN: Details */}
+              {/* RIGHT COLUMN: Details, CTA, Related, & Reviews (Spaced beautifully) */}
               <div className="w-full md:w-1/2 flex flex-col p-6 md:p-10">
+                
                 <div className="mb-6">
                   <h2 className="text-[28px] leading-tight text-[#2C1A1D] md:text-[36px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>{product.title}</h2>
                   <p className="mt-2 text-[18px] font-semibold text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{product.price.toLocaleString()}</p>
@@ -180,16 +174,16 @@ export function ProductModal({ product, onClose }: Props) {
                 
                 <hr className="mb-8 border-[#2C1A1D]/10" />
 
-                {/* Sizes (60% Chocolate) */}
+                {/* Sizes: 3 per row Grid */}
                 {sizes.length > 0 && (
                   <div className="mb-8">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Select Size</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       {sizes.map((size: string) => (
                         <button 
                           key={size} 
                           onClick={() => setSelectedSize(size)} 
-                          className={`flex h-[44px] items-center justify-center px-4 text-[10px] font-bold uppercase tracking-wide transition-all border rounded-md ${selectedSize === size ? "bg-[#2C1A1D]/60 border-[#2C1A1D]/60 text-[#FBF9F5]" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5"}`} 
+                          className={`flex h-[44px] items-center justify-center text-[10px] font-bold uppercase tracking-wide transition-all border rounded-md ${selectedSize === size ? "bg-[#2C1A1D]/60 border-[#2C1A1D]/60 text-[#FBF9F5]" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5"}`} 
                           style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
                         >
                           {size}
@@ -199,8 +193,8 @@ export function ProductModal({ product, onClose }: Props) {
                   </div>
                 )}
 
-                {/* DUAL CTAs */}
-                <div className="flex flex-col gap-4 mb-10">
+                {/* Add to Cart Section */}
+                <div className="flex flex-col gap-4 mb-8">
                   <div className="flex items-center gap-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Qty</p>
                     <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[#2C1A1D]/20 bg-white">
@@ -215,23 +209,32 @@ export function ProductModal({ product, onClose }: Props) {
                   </button>
 
                   {isBulkAvailable && (
-                    <button 
-                      onClick={handleBulkQuote}
-                      className="w-full rounded-md border border-[#2C1A1D] py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#2C1A1D] hover:text-white"
-                      style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
-                    >
+                    <button onClick={handleBulkQuote} className="w-full rounded-md border border-[#2C1A1D] py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#2C1A1D] hover:text-white" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                       Request Bulk Quote
                     </button>
                   )}
                 </div>
 
+                {/* Restored Share & Copy Icons */}
+                <div className="flex items-center gap-4 mb-10">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Share</p>
+                  <div className="flex gap-2">
+                    <a href={`https://wa.me/?text=Check out this product: ${shareUrl}`} target="_blank" rel="noopener noreferrer" className="flex h-10 w-10 items-center justify-center rounded-md border border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
+                    </a>
+                    <button onClick={copyToClipboard} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D]/5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                  </div>
+                </div>
+
                 <hr className="mb-10 border-[#2C1A1D]/10" />
 
-                {/* Frequently Bought Together (Mobile) */}
+                {/* Complete the Look / Frequently Bought Together (Properly contained inside the column now) */}
                 {relatedProducts.length > 0 && (
-                  <div className="md:hidden mb-10">
+                  <div className="mb-10">
                     <h3 className="mb-4 text-[20px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
-                      Frequently bought together
+                      Complete the look
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                       {relatedProducts.map((p) => (
@@ -247,7 +250,7 @@ export function ProductModal({ product, onClose }: Props) {
                   </div>
                 )}
 
-                {/* Reviews */}
+                {/* Reviews (Properly contained inside the column now) */}
                 <div>
                   <h3 className="mb-6 text-[22px] font-normal text-[#2C1A1D] md:text-[26px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Reviews</h3>
                   
@@ -288,7 +291,6 @@ export function ProductModal({ product, onClose }: Props) {
                     </form>
                   )}
                 </div>
-
               </div>
             </div>
           </div>
