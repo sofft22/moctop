@@ -23,8 +23,8 @@ export function Header() {
   const lastY = useRef(0);
   const ticking = useRef(false);
 
-  const HIDE_AFTER = 120;
-  const TOLERANCE = 6;
+  const HIDE_AFTER = 50; // Hide after scrolling down a little bit
+  const TOLERANCE = 5;
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -41,7 +41,7 @@ export function Header() {
     const measure = () => {
       const el = document.getElementById('hero');
       if (el) setHeroHeight(el.offsetHeight);
-      else setHeroHeight(window.innerHeight); 
+      else setHeroHeight(0); // If no hero, header is always solid
     };
     setTimeout(measure, 100); 
     window.addEventListener('resize', measure);
@@ -59,6 +59,7 @@ export function Header() {
 
         setScrolled(y);
 
+        // Hide on scroll down, show on scroll up (Global for all pages)
         if (y > HIDE_AFTER && diff > TOLERANCE) {
           setHidden(true);
         } else if (diff < -TOLERANCE || y <= HIDE_AFTER) {
@@ -73,21 +74,21 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const overHero = heroHeight === 0 || scrolled < heroHeight - 40; 
+  // Only transparent if we are actually over the hero section
+  const overHero = heroHeight > 0 && scrolled < heroHeight - 40; 
   const textClass = overHero ? 'text-white' : 'text-[#2C1A1D]';
 
-  // UPDATED NAVIGATION WITH CORRECT TARGETS
   const NAV = [
     { label: 'Signature Treats', targetId: 'signature-treats' },
     { label: 'Categories', targetId: 'categories' },
     { label: 'Shop', href: '/shop' },
     { label: 'My Orders', href: '/my-orders' },
-    { label: 'About Us', targetId: 'about' }, // Assuming your OurStory section has id="about"
+    { label: 'About Us', targetId: 'about' },
     { label: 'Contact', targetId: 'footer' },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: any) => {
-    if (item.href) return; // Let standard links (like Shop) work normally
+    if (item.href) return; // Let standard links work normally
     
     e.preventDefault();
     setMobileMenuOpen(false);
@@ -95,7 +96,7 @@ export function Header() {
     const scrollToTarget = () => {
       const el = document.getElementById(item.targetId);
       if (el) {
-        const yOffset = -80; // Offset for the fixed header
+        const yOffset = -80;
         const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
@@ -104,9 +105,8 @@ export function Header() {
     if (pathname === '/') {
       scrollToTarget();
     } else {
-      // If on a different page (like Shop), go to home first, then scroll
       router.push('/');
-      setTimeout(scrollToTarget, 500); // Small delay to let the page load
+      setTimeout(scrollToTarget, 500);
     }
   };
 
@@ -114,7 +114,7 @@ export function Header() {
     <>
       <header
         className={`fixed left-0 right-0 top-0 z-40 transition-[background-color,border-color,transform,color] duration-300 ease-out ${
-          hidden && !overHero ? '-translate-y-full' : 'translate-y-0'
+          hidden ? '-translate-y-full' : 'translate-y-0'
         }`}
         style={{
           backgroundColor: overHero ? 'transparent' : '#FBF9F5', 
@@ -135,14 +135,14 @@ export function Header() {
             </Link>
           </div>
 
-          <nav className="flex items-center justify-center gap-8">
+          <nav className="flex items-center justify-center gap-7">
             {NAV.map((item) => (
               <Link
                 key={item.label}
                 href={item.href || `/#${item.targetId}`}
                 onClick={(e) => handleNavClick(e, item)}
-                // LIGHTER & SMALLER DESKTOP NAV
-                className={`whitespace-nowrap text-[10px] lg:text-[11px] font-light uppercase tracking-[0.18em] transition-colors duration-300 hover:opacity-60 ${textClass}`}
+                // LIGHTER, SMALLER, SOFTER DESKTOP NAV
+                className={`whitespace-nowrap text-[10px] font-normal tracking-[0.15em] uppercase transition-colors duration-300 hover:opacity-60 ${textClass}`}
                 style={{ fontFamily: 'var(--font-inter), sans-serif' }}
               >
                 {item.label}
@@ -227,7 +227,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* NEW BOXED MOBILE DROPDOWN MENU (Like the Category dropdown) */}
+        {/* BOXED MOBILE DROPDOWN MENU */}
         <div 
           className={`absolute top-[56px] left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
             mobileMenuOpen ? 'max-h-[400px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
@@ -249,7 +249,7 @@ export function Header() {
         </div>
       </header>
       
-      {/* MOBILE OVERLAY (Closes menu when clicking outside) */}
+      {/* MOBILE OVERLAY */}
       <div 
         className={`fixed inset-0 z-30 bg-black/20 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
