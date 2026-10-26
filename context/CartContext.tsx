@@ -1,9 +1,8 @@
-// Paste your CartContext here
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-interface CartItem {
+export interface CartItem {
   cartId: string;
   id: string;
   title: string;
@@ -31,8 +30,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // 1. Load cart from LocalStorage when the app starts
+  // 1. Mark as mounted so we know we are in the browser, then load the cart
   useEffect(() => {
+    setIsMounted(true);
     const savedCart = localStorage.getItem("mocktopia_cart");
     if (savedCart) {
       try {
@@ -41,10 +41,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse cart", e);
       }
     }
-    setIsMounted(true);
   }, []);
 
-  // 2. Save cart to LocalStorage whenever it changes
+  // 2. Save to localStorage whenever the cart changes (only if mounted)
   useEffect(() => {
     if (isMounted) {
       localStorage.setItem("mocktopia_cart", JSON.stringify(cart));
@@ -53,13 +52,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: any, size: string, qty: number) => {
     setCart((prevCart) => {
-      // Check if item with same ID and size already exists
       const existingItem = prevCart.find(
         (item) => item.id === product.id && item.size === size
       );
 
       if (existingItem) {
-        // Update quantity if it exists
         return prevCart.map((item) =>
           item.id === product.id && item.size === size
             ? { ...item, qty: item.qty + qty }
@@ -67,18 +64,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
       }
 
-      // Add new item
       return [
         ...prevCart,
         {
           ...product,
-          cartId: `${product.id}-${size}-${Date.now()}`, // Unique ID for cart
+          cartId: `${product.id}-${size}-${Date.now()}`,
           size,
           qty,
         },
       ];
     });
-    setIsCartOpen(true); // Auto-open cart when adding
+    setIsCartOpen(true); 
   };
 
   const removeFromCart = (cartId: string) => {
