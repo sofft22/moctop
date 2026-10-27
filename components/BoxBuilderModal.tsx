@@ -16,21 +16,22 @@ export function BoxBuilderModal({ config, onClose }: Props) {
   const totalSelected = Object.values(selectedToppings).reduce((a, b) => a + b, 0);
   const isComplete = totalSelected === config.slots;
 
-  const handleSelect = (toppingId: string) => {
-    if (totalSelected >= config.slots) return;
-    setSelectedToppings(prev => ({
-      ...prev,
-      [toppingId]: (prev[toppingId] || 0) + 1
-    }));
-  };
-
-  const handleRemove = (toppingId: string) => {
+  const handleToggle = (toppingId: string) => {
+    if (totalSelected >= config.slots && !selectedToppings[toppingId]) return;
+    
     setSelectedToppings(prev => {
       const newState = { ...prev };
-      if (newState[toppingId] > 1) {
-        newState[toppingId] -= 1;
+      const currentCount = newState[toppingId] || 0;
+      
+      // If they have some, remove one. If they have 0, add one.
+      if (currentCount > 0) {
+        if (currentCount === 1) {
+          delete newState[toppingId];
+        } else {
+          newState[toppingId] = currentCount - 1;
+        }
       } else {
-        delete newState[toppingId];
+        newState[toppingId] = 1;
       }
       return newState;
     });
@@ -62,16 +63,15 @@ export function BoxBuilderModal({ config, onClose }: Props) {
     <div className="fixed inset-0 z-[120] flex bg-black/60 backdrop-blur-sm sm:p-4 sm:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 hidden sm:block" />
       
-      {/* FULL SCREEN ON MOBILE, ELEGANT ON DESKTOP */}
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-[850px] sm:rounded-xl overflow-y-auto scroll-smooth"
+        className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-[850px] sm:rounded-xl overflow-y-auto"
       >
         
-        {/* NON-STICKY HEADER */}
+        {/* HEADER */}
         <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 px-6 py-5 bg-[#FBF9F5]">
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#2C1A1D]/50 mb-1" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Custom Experience</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2C1A1D]/50 mb-1" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Custom Experience</p>
             <h2 className="text-[26px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>{config.title}</h2>
           </div>
           <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full text-[#2C1A1D]/50 hover:text-[#2C1A1D] transition-colors">
@@ -85,39 +85,61 @@ export function BoxBuilderModal({ config, onClose }: Props) {
             Select exactly {config.slots} treats to build your perfect box.
           </p>
           
-          {/* TOPPING GRID */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          {/* EXACT PRODUCT CARD GRID */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
             {config.toppings.map((topping: any) => {
               const count = selectedToppings[topping.id] || 0;
+              const isSelected = count > 0;
+              const formattedTitle = topping.name.replace(/\b\w/g, (char: string) => char.toUpperCase());
+
               return (
-                <div key={topping.id} className={`group relative flex flex-col rounded-xl border-2 transition-all duration-300 bg-white overflow-hidden ${count > 0 ? "border-[#2C1A1D] shadow-md" : "border-[#2C1A1D]/10 hover:border-[#2C1A1D]/30"}`}>
+                <div 
+                  key={topping.id} 
+                  onClick={() => handleToggle(topping.id)}
+                  className={`group flex flex-col cursor-pointer w-full transition-transform ${isComplete && !isSelected ? "opacity-50" : ""}`}
+                >
                   
-                  <div className="relative aspect-[4/5] w-full cursor-pointer overflow-hidden" onClick={() => handleSelect(topping.id)}>
-                    <Image src={topping.image} alt={topping.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                  {/* IMAGE CONTAINER (Matches ProductCard) */}
+                  <div className={`relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3] border-2 transition-all duration-300 ${isSelected ? "border-[#2C1A1D]" : "border-transparent"}`}>
+                    <Image 
+                      src={topping.image} 
+                      alt={formattedTitle} 
+                      fill 
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
+                    />
                     
-                    {/* Selected Count Badge */}
-                    {count > 0 && (
-                      <div className="absolute top-2 right-2 bg-[#2C1A1D] text-[#FBF9F5] h-7 w-7 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-[12px] font-bold">{count}</span>
+                    {/* SELECTED CHECKMARK OVERLAY */}
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#2C1A1D] text-white shadow-md animate-in zoom-in">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       </div>
                     )}
                   </div>
 
-                  <div className="p-3 flex items-center justify-between bg-white">
-                    <p className="text-[12px] font-bold text-[#2C1A1D] truncate pr-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{topping.name}</p>
-                    
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {count > 0 && (
-                        <button onClick={() => handleRemove(topping.id)} className="h-6 w-6 rounded-md border border-[#2C1A1D]/20 flex items-center justify-center text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors">−</button>
-                      )}
-                      <button 
-                        onClick={() => handleSelect(topping.id)} 
-                        disabled={isComplete} 
-                        className={`h-6 w-6 rounded-md border flex items-center justify-center transition-colors ${isComplete ? "border-gray-200 text-gray-300" : "border-[#2C1A1D]/20 text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white"}`}
+                  {/* BOTTOM SECTION (Matches ProductCard Fonts) */}
+                  <div className="mt-3 flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <h3 
+                        className="text-[12px] md:text-[13px] font-semibold truncate leading-[1.3] tracking-[0.01em] text-[#2C1A1D]"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                       >
-                        +
-                      </button>
+                        {formattedTitle}
+                      </h3>
+                      
+                      {/* QTY BADGE */}
+                      {isSelected && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2C1A1D] text-[10px] font-bold text-white shrink-0 ml-2">
+                          {count}
+                        </span>
+                      )}
                     </div>
+                    
+                    <p 
+                      className="text-[11px] font-bold text-[#2C1A1D]/40 uppercase tracking-wider"
+                      style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
+                    >
+                      Tap to add
+                    </p>
                   </div>
                 </div>
               );
@@ -125,11 +147,11 @@ export function BoxBuilderModal({ config, onClose }: Props) {
           </div>
         </div>
 
-        {/* FOOTER (Scrolls with content, no stick) */}
+        {/* PREMIUM FOOTER */}
         <div className="mt-auto border-t border-[#2C1A1D]/10 bg-[#FBF9F5] p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-10 sm:pb-8">
           
           <div className="flex flex-col">
-            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
               {isComplete ? "Box Complete" : `Selected: ${totalSelected} of ${config.slots}`}
             </p>
             <p className="text-[24px] font-semibold text-[#2C1A1D] mt-1" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
@@ -147,7 +169,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
             }`} 
             style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
           >
-            {isComplete ? "Add to Bag" : `Select ${config.slots - totalSelected} More`}
+            {isComplete ? `Add to Bag — £${config.price.toFixed(2)}` : `Select ${config.slots - totalSelected} More`}
           </button>
         </div>
 
