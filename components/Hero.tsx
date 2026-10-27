@@ -49,7 +49,7 @@ export function Hero() {
           {!isVideoLoaded && (
              <div 
                className="absolute inset-0 h-full w-full bg-cover bg-center"
-               style={{ backgroundImage: "url('/hero.png')" }}
+               style={{ backgroundImage: "url('/hero.PNG')" }}
              />
           )}
         </div>
