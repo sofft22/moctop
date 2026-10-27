@@ -6,13 +6,15 @@ export function Hero() {
     <>
       <style>{`
         .hero-section {
-          height: 76vh;
-          min-height: 500px;
+          /* Increased from 76vh to 85vh */
+          height: 85vh;
+          min-height: 600px;
         }
         @media (max-width: 768px) {
           .hero-section {
-            height: 68vh;
-            min-height: 400px;
+            /* Increased from 68vh to 75vh */
+            height: 75vh;
+            min-height: 500px;
           }
         }
       `}</style>
@@ -22,26 +24,27 @@ export function Hero() {
         <div className="absolute inset-0 z-0">
           <Image
             src="/hero.png"
-            alt="Mocktopia Treats"
+            alt="Mocktopia Sips and Treats"
             fill
             className="object-cover object-center"
             priority
+            sizes="100vw"
           />
         </div>
 
         <div className="absolute inset-0 z-10 bg-black/35" />
 
-        <div className="absolute bottom-8 left-0 right-0 z-20 flex flex-col items-center px-6 text-center md:bottom-12">
+        <div className="absolute bottom-10 left-0 right-0 z-20 flex flex-col items-center px-6 text-center md:bottom-16">
           
           <h1 
             className="text-[52px] leading-[1.05] text-white md:text-[85px]"
             style={{ 
               fontFamily: 'var(--font-dm-serif), serif',
               textShadow: '0 4px 20px rgba(0,0,0,0.15)',
-              marginBottom: '12px' 
+              marginBottom: '16px' 
             }}
           >
-           Treats  & sips.
+           Sips before treats.
           </h1>
 
           <Link 
