@@ -31,7 +31,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
   };
 
   const handleRemoveAll = (e: React.MouseEvent, toppingId: string) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Stop the click from adding another one
     setSelectedToppings(prev => {
       const newState = { ...prev };
       delete newState[toppingId];
@@ -63,16 +63,14 @@ export function BoxBuilderModal({ config, onClose }: Props) {
 
   return (
     <div 
-      className="fixed inset-0 z-[120] flex bg-[#1F1315]/80 backdrop-blur-sm sm:p-6 items-end sm:items-center justify-center" 
+      className="fixed inset-0 z-[120] flex bg-[#1F1315]/80 backdrop-blur-sm sm:p-6 items-center justify-center" 
       onClick={onClose}
     >
       <div className="absolute inset-0 hidden sm:block" />
       
-      {/* THE SCROLL FIX: removed h-[100dvh], using max-h and overflow-y-auto on the wrapper */}
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full sm:max-w-[1000px] sm:rounded-xl overflow-y-auto sm:max-h-[90vh] h-full"
-        style={{ WebkitOverflowScrolling: "touch" }}
+        className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px] sm:rounded-xl overflow-y-auto overscroll-contain"
       >
         
         {/* HEADER */}
@@ -125,6 +123,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
               return (
                 <div key={topping.id} className="flex flex-col w-full group">
                   
+                  {/* IMAGE CARD */}
                   <div 
                     onClick={() => handleAddOne(topping.id)}
                     className={`relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3] cursor-pointer transition-all duration-300 ${!isSelected && isFull ? "opacity-40" : "opacity-100"}`}
@@ -136,6 +135,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
                       className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${isSelected ? "scale-105" : ""}`} 
                     />
                     
+                    {/* SMALL X TO REMOVE (Only when selected) */}
                     {isSelected && (
                       <button 
                         onClick={(e) => handleRemoveAll(e, topping.id)}
@@ -145,6 +145,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
                       </button>
                     )}
 
+                    {/* CENTERED NUMBER (Only when selected) */}
                     {isSelected && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/10 pointer-events-none">
                         <div className="bg-white text-[#2C1A1D] h-10 w-10 rounded-full flex items-center justify-center font-bold text-[15px] shadow-md">
@@ -154,11 +155,13 @@ export function BoxBuilderModal({ config, onClose }: Props) {
                     )}
                   </div>
 
+                  {/* TITLE & CLICK TO ADD */}
                   <div className="mt-2.5 text-center flex flex-col items-center">
                     <h3 className="text-[12px] font-semibold text-[#2C1A1D] truncate w-full" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
                       {formattedTitle}
                     </h3>
                     
+                    {/* Only shows "Click to add" if NOT selected */}
                     {!isSelected && (
                       <p 
                         className="text-[10px] text-[#2C1A1D]/40 mt-1.5 transition-colors hover:text-[#2C1A1D]"
