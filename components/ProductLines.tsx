@@ -8,7 +8,6 @@ export function ProductLines() {
       title: "Banana Bread",
       description: "Available in boxes of 6 or 8, and MIDI or Maxi loaves. Customize with coconut, Oreos, Nutella, and more.",
       image: "/category-banana-bread.png", 
-      // WIRED TO FILTER THE SHOP PAGE
       link: "/shop?category=banana-bread"
     },
     {
@@ -28,55 +27,52 @@ export function ProductLines() {
   ];
 
   return (
-    <section id="categories" className="w-full bg-[#FBF9F5] py-16 px-6 md:py-24 md:px-12 lg:px-20">
-      <div className="mx-auto max-w-[1200px]">
+    <section id="categories" className="w-full bg-[#FBF9F5] py-20 px-6 md:py-28 md:px-12 lg:px-20">
+      <div className="mx-auto max-w-[1400px]">
         
         {/* Header */}
-        <div className="mb-10 flex items-end justify-between">
+        <div className="mb-12 flex items-end justify-between">
           <h2 
-            className="text-[24px] md:text-[40px] font-normal text-[#2C1A1D]"
+            className="text-[32px] md:text-[48px] font-normal text-[#2C1A1D]"
             style={{ fontFamily: 'var(--font-dm-serif), serif' }}
           >
             Shop by Category
           </h2>
         </div>
 
-        {/* GRID LOGIC:
-            Mobile: 2 columns. 
-            The 3rd item (mocktails) will span both columns and be centered.
-        */}
+        {/* Grid Layout - 2 columns on mobile, 3 on desktop */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
           {categories.map((cat, index) => {
-            // Make the 3rd item (index 2) span 2 columns on mobile and center it
+            // Center the 3rd item on mobile
             const isCentered = index === 2;
 
             return (
               <Link 
                 key={cat.id} 
                 href={cat.link}
-                className={`group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow ${
+                className={`group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ${
                   isCentered ? "col-span-2 md:col-span-1 w-1/2 md:w-full mx-auto" : ""
                 }`}
               >
                 
-                {/* Top: Image */}
-                <div className="relative w-full aspect-[5/4] bg-[#EBE0D3] overflow-hidden">
+                {/* Top: Image (Made much taller: aspect-[4/5]) */}
+                <div className="relative w-full aspect-[4/5] md:aspect-[3/4] bg-[#EBE0D3] overflow-hidden">
                   <Image
                     src={cat.image}
                     alt={cat.title}
                     fill
                     sizes="(max-width: 768px) 50vw, 33vw"
-                    priority={index < 2} // Loads the first two instantly
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    priority={index < 2}
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   
-                  {/* Subtle gradient at the bottom so text is readable */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
+                  {/* Stronger gradient for better text visibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
                   
-                  {/* Title anchored to the bottom left of the image */}
-                  <div className="absolute bottom-3 left-3 md:bottom-6 md:left-6">
+                  {/* Title anchored to the bottom left, made larger */}
+                  <div className="absolute bottom-5 left-5 md:bottom-8 md:left-8">
                     <h3 
-                      className="text-[20px] text-white md:text-[32px] leading-tight drop-shadow-md"
+                      className="text-[24px] text-white md:text-[36px] leading-tight drop-shadow-lg"
                       style={{ fontFamily: 'var(--font-dm-serif), serif' }}
                     >
                       {cat.title}
@@ -84,10 +80,10 @@ export function ProductLines() {
                   </div>
                 </div>
 
-                {/* Bottom: Description text inside the white box */}
-                <div className="p-4 md:p-6 flex-1 hidden md:block">
+                {/* Bottom: Description (More padding, larger text) */}
+                <div className="p-5 md:p-8 flex-1 bg-white">
                   <p 
-                    className="text-[13px] leading-[1.6] text-[#2C1A1D]/70 md:text-[14px]"
+                    className="text-[13px] leading-[1.7] text-[#2C1A1D]/70 md:text-[15px]"
                     style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                   >
                     {cat.description}
