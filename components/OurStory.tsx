@@ -9,11 +9,12 @@ export function OurStory() {
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
           
           {/* 1. IMAGE SIDE (Left on desktop) */}
-          <div className="relative w-full lg:w-1/2 aspect-square md:aspect-[4/3] lg:aspect-square overflow-hidden rounded-xl">
+          <div className="relative w-full lg:w-1/2 aspect-square md:aspect-[4/3] lg:aspect-square overflow-hidden rounded-xl bg-[#EBE0D3]">
             <Image
-              src="/hero.png" // Using your static hero image
+              src="/our-story.png" // CHANGED TO A DEDICATED IMAGE
               alt="Mocktopia Story"
               fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover"
               priority
             />
