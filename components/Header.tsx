@@ -125,8 +125,8 @@ export function Header() {
     }
   };
 
-  // Determine if we show the banner
-  const showBanner = bannerActive && !isBannerClosed;
+  // ONLY SHOW BANNER ON HOME AND SHOP PAGE
+  const showBanner = bannerActive && !isBannerClosed && (pathname === "/" || pathname === "/shop");
 
   return (
     <>
