@@ -19,15 +19,27 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
   const [featured, setFeatured] = useState(product ? product.featured === 1 : true);
   const [isBulk, setIsBulk] = useState(product ? product.isBulk === 1 : true);
   
-  const [sizes, setSizes] = useState<string[]>(() => {
-    if (!product || !product.sizes) return [""];
-    if (Array.isArray(product.sizes)) return product.sizes;
-    try {
-      const parsed = JSON.parse(product.sizes);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : [""];
-    } catch (e) {
-      return [""];
+  // CHANGED: Sizes state now holds objects with size name and price
+  const [sizes, setSizes] = useState<{ size: string; price: string }[]>(() => {
+    if (!product || !product.sizes) return [{ size: "", price: "" }];
+    
+    let parsedSizes: any[] = [];
+    if (Array.isArray(product.sizes)) {
+      parsedSizes = product.sizes;
+    } else {
+      try {
+        const parsed = JSON.parse(product.sizes);
+        if (Array.isArray(parsed)) parsedSizes = parsed;
+      } catch (e) {}
     }
+
+    if (parsedSizes.length === 0) return [{ size: "", price: "" }];
+
+    // Map old string sizes to the new object format safely
+    return parsedSizes.map((s: any) => {
+      if (typeof s === "string") return { size: s, price: "" };
+      return { size: s.size || "", price: s.price?.toString() || "" };
+    });
   });
   
   const [images, setImages] = useState<string[]>(() => {
@@ -95,7 +107,13 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
     setSaving(true);
     
-    const cleanSizes = sizes.filter((s) => typeof s === 'string' && s.trim() !== "");
+    // Clean sizes: Remove empty rows, ensure price is a number
+    const cleanSizes = sizes
+      .filter((s) => s.size.trim() !== "")
+      .map((s) => ({
+        size: s.size.trim(),
+        price: s.price ? Number(s.price) : Number(price) // fallback to base price if left empty
+      }));
 
     const payload = {
       id: product?.id,
@@ -123,10 +141,8 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
     <div className="fixed inset-0 z-[120] flex bg-black/60 backdrop-blur-sm sm:p-4 sm:items-center justify-center">
       <div className="absolute inset-0 hidden sm:block" onClick={onClose} />
       
-      {/* FULL SCREEN ON MOBILE, SCROLLS FROM THE VERY TOP */}
       <div className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-[600px] sm:rounded-lg overflow-y-auto">
         
-        {/* Header (Scrolls naturally with the rest of the form) */}
         <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 px-6 py-5 bg-[#FBF9F5]">
           <h2 className="text-[22px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
             {product ? "Edit Product" : "New Product"}
@@ -138,33 +154,25 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
         <div className="p-6 flex flex-col gap-6 pb-8">
           
+          {/* IMAGES */}
           <div>
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Product Images (First is Main)</label>
-            
             <div className="flex flex-wrap gap-3">
               {images.map((img, i) => (
                 <div key={i} className={`relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-[#EBE0D3] border-2 transition-all ${i === 0 ? "border-[#2C1A1D]" : "border-transparent"}`}>
                   <Image src={img} alt={`Preview ${i}`} fill className="object-cover" />
-                  
                   <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                     <button onClick={() => removeImage(i)} className="bg-white rounded-full px-2 py-1 text-red-500 text-[10px] font-bold shadow-md">Remove</button>
-                    {i !== 0 && (
-                      <button onClick={() => setMainImage(i)} className="bg-white rounded-full px-2 py-1 text-[#2C1A1D] text-[10px] font-bold shadow-md">Make Main</button>
-                    )}
+                    {i !== 0 && <button onClick={() => setMainImage(i)} className="bg-white rounded-full px-2 py-1 text-[#2C1A1D] text-[10px] font-bold shadow-md">Make Main</button>}
                   </div>
-                  
-                  {i === 0 && (
-                    <span className="absolute top-1 left-1 bg-[#2C1A1D] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">MAIN</span>
-                  )}
+                  {i === 0 && <span className="absolute top-1 left-1 bg-[#2C1A1D] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">MAIN</span>}
                 </div>
               ))}
-
               <label className="flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#2C1A1D]/20 bg-white text-[#2C1A1D]/50 hover:border-[#2C1A1D] transition-colors">
                 {uploading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /> : <span className="text-2xl">+</span>}
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
               </label>
             </div>
-            <p className="text-[11px] text-[#2C1A1D]/50 mt-2" style={{ fontFamily: "var(--font-inter), sans-serif" }}>Upload multiple images. The one marked MAIN shows on the grid.</p>
           </div>
 
           <div>
@@ -174,7 +182,7 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Price (£)</label>
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Base Price (£)</label>
               <input value={price} onChange={e => setPrice(e.target.value)} type="number" placeholder="6.50" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
             </div>
             <div>
@@ -192,16 +200,38 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Tell the customer why they need this..." className="w-full resize-none rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
           </div>
 
+          {/* SIZES / OPTIONS - WITH SEPARATE PRICES */}
           <div>
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Sizes / Options</label>
-            <div className="flex flex-col gap-2">
-              {sizes.map((size, i) => (
-                <div key={i} className="flex gap-2">
-                  <input value={size} onChange={e => { const n = [...sizes]; n[i] = e.target.value; setSizes(n); }} type="text" placeholder="e.g. Box of 6" className="flex-1 rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
+            <div className="flex flex-col gap-3">
+              {sizes.map((option, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  {/* Size Name */}
+                  <input 
+                    value={option.size} 
+                    onChange={e => { const n = [...sizes]; n[i].size = e.target.value; setSizes(n); }} 
+                    type="text" 
+                    placeholder="e.g. Box of 6" 
+                    className="flex-1 rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" 
+                    style={{ fontFamily: "var(--font-inter), sans-serif" }} 
+                  />
+                  {/* Price for this size */}
+                  <div className="relative w-[100px]">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-[#2C1A1D]/50">£</span>
+                    <input 
+                      value={option.price} 
+                      onChange={e => { const n = [...sizes]; n[i].price = e.target.value; setSizes(n); }} 
+                      type="number" 
+                      placeholder="0.00" 
+                      className="w-full rounded-md border border-[#2C1A1D]/20 bg-white pl-7 pr-3 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" 
+                      style={{ fontFamily: "var(--font-inter), sans-serif" }} 
+                    />
+                  </div>
+                  {/* Remove Button */}
                   <button onClick={() => setSizes(sizes.filter((_, idx) => idx !== i))} className="text-[#2C1A1D]/40 hover:text-red-500 px-2">✕</button>
                 </div>
               ))}
-              <button onClick={() => setSizes([...sizes, ""])} className="text-[12px] font-bold uppercase tracking-wider text-[#2C1A1D] text-left mt-2 hover:underline">+ Add Size</button>
+              <button onClick={() => setSizes([...sizes, { size: "", price: "" }])} className="text-[12px] font-bold uppercase tracking-wider text-[#2C1A1D] text-left mt-2 hover:underline">+ Add Option</button>
             </div>
           </div>
 
@@ -237,7 +267,6 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
         </div>
 
-        {/* SAVE BUTTON (Pinned to bottom, padded safely) */}
         <div className="p-6 pb-8 sm:pb-6 bg-[#FBF9F5] border-t border-[#2C1A1D]/10 shrink-0">
           <button onClick={handleSave} disabled={saving || uploading} className="w-full rounded-md bg-[#2C1A1D] py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5] transition-all hover:bg-[#1F1315] disabled:opacity-50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
             {saving ? "Saving..." : product ? "Save Changes" : "Create Product"}
