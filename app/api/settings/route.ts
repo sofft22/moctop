@@ -1,4 +1,3 @@
-// app/api/settings/route.ts
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { settings } from "@/lib/schema";
@@ -16,9 +15,10 @@ export async function POST(request: Request) {
   
   await db.update(settings)
     .set({
-      deliveryZones: body.deliveryZones !== undefined ? body.deliveryZones : undefined,
-      bannerText: body.bannerText !== undefined ? body.bannerText : undefined,
-      bannerActive: body.bannerActive !== undefined ? body.bannerActive : undefined,
+      deliveryZones: body.deliveryZones,
+      bannerText: body.bannerText,
+      bannerActive: body.bannerActive,
+      boxBuilderConfig: body.boxBuilderConfig, // NEW
     })
     .where(eq(settings.id, 1));
 
