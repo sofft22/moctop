@@ -45,7 +45,7 @@ export default function AdminProductsPage() {
   }, [isSearchOpen]);
 
   const toggleStock = async (e: React.MouseEvent, id: string, currentStock: boolean) => {
-    e.stopPropagation(); // Stop row click
+    e.stopPropagation(); 
     setProducts(products.map(p => p.id === id ? { ...p, inStock: !currentStock } : p));
     await fetch("/api/products", {
       method: "PUT",
@@ -54,7 +54,7 @@ export default function AdminProductsPage() {
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string, title: string) => {
-    e.stopPropagation(); // Stop row click
+    e.stopPropagation(); 
     if (confirm(`Are you sure you want to delete "${title}"?`)) {
       setProducts(products.filter(p => p.id !== id));
       await fetch(`/api/products?id=${id}`, { method: "DELETE" });
@@ -130,7 +130,6 @@ export default function AdminProductsPage() {
       ) : (
         <ul className="flex flex-col border-t border-[#2C1A1D]/10">
           {filtered.map((p) => (
-            {/* ROW IS NOW FULLY CLICKABLE */}
             <li 
               key={p.id} 
               onClick={() => { setEditingProduct(p); setIsModalOpen(true); }}
@@ -147,7 +146,6 @@ export default function AdminProductsPage() {
               </div>
 
               <div className="w-[80px] shrink-0 text-right">
-                {/* CONVERTED TO £ */}
                 <p className="text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{p.price.toLocaleString()}</p>
               </div>
 
