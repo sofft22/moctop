@@ -20,18 +20,15 @@ export default function ShopPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   useEffect(() => {
-    // 1. Load from cache instantly (0ms delay)
     const cached = localStorage.getItem("mocktopia_products_cache");
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        // Show all products (including sold out)
         setProducts(parsed);
         setLoading(false);
       } catch (e) {}
     }
 
-    // 2. Fetch fresh data in the background
     fetch("/api/products")
       .then(res => res.json())
       .then(data => {
@@ -51,7 +48,6 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F5] text-[#2C1A1D] flex flex-col">
       
-      {/* CHOCOLATE HEADER SECTION */}
       <section id="hero" className="bg-[#2C1A1D] pt-[88px] pb-8 px-6 md:pt-[104px] md:pb-10 md:px-12 border-b border-[#FBF9F5]/10 relative z-20">
         <div className="mx-auto max-w-[1400px]">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -79,7 +75,6 @@ export default function ShopPage() {
         </div>
       </section>
 
-      {/* PRODUCT GRID SECTION */}
       <section className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-12 md:px-6 md:py-16">
         {loading ? (
           <div className="flex justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>
@@ -104,7 +99,6 @@ export default function ShopPage() {
         )}
       </section>
 
-      {/* INLINE COPYRIGHT FOOTER */}
       <div className="w-full border-t border-[#2C1A1D]/10 pt-8 pb-12 mt-auto">
         <p className="text-center text-[9px] md:text-[10px] uppercase tracking-[0.1em] text-[#2C1A1D]/50" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
           © {new Date().getFullYear()} Mocktopia Treats. All rights reserved.
@@ -112,7 +106,11 @@ export default function ShopPage() {
       </div>
 
       {selectedProduct && (
-        <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+        <ProductModal 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+          allProducts={products} // PASSING DATA FOR INSTANT FBT
+        />
       )}
     </div>
   );
