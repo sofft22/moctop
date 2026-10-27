@@ -8,20 +8,8 @@ export function OurStory() {
         {/* Layout: Flex-col on mobile, Flex-row on desktop */}
         <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
           
-          {/* 1. IMAGE SIDE (Left on desktop) */}
-          <div className="relative w-full lg:w-1/2 aspect-square md:aspect-[4/3] lg:aspect-square overflow-hidden rounded-xl bg-[#EBE0D3]">
-            <Image
-              src="/our-story.png"
-              alt="Mocktopia Story"
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-              priority
-            />
-          </div>
-
-          {/* 2. TEXT SIDE (Right on desktop) */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center">
+          {/* 1. TEXT SIDE (Right on desktop, but on mobile the Title comes first) */}
+          <div className="w-full lg:w-1/2 flex flex-col justify-center order-2 lg:order-2">
             
             <h2 
               className="mb-6 text-[32px] text-[#2C1A1D] md:text-[48px]"
@@ -29,6 +17,18 @@ export function OurStory() {
             >
               Our Story
             </h2>
+
+            {/* Mobile Image (Only visible on mobile, sits between title and text) */}
+            <div className="block lg:hidden relative w-full aspect-square md:aspect-[4/3] overflow-hidden rounded-xl bg-[#EBE0D3] mb-6">
+              <Image
+                src="/our-story.png"
+                alt="Mocktopia Story"
+                fill
+                sizes="100vw"
+                className="object-cover"
+                priority
+              />
+            </div>
 
             <p 
               className="text-[15px] font-semibold leading-[1.6] text-[#2C1A1D]/90 md:text-[17px] mb-6"
@@ -72,6 +72,20 @@ export function OurStory() {
               Mocktopia Treats — made with love, served with joy.
             </p>
 
+          </div>
+
+          {/* 2. IMAGE SIDE (Left on desktop) */}
+          <div className="hidden lg:block w-full lg:w-1/2 order-1 lg:order-1">
+            <div className="relative w-full aspect-square overflow-hidden rounded-xl bg-[#EBE0D3]">
+              <Image
+                src="/our-story.png"
+                alt="Mocktopia Story"
+                fill
+                sizes="50vw"
+                className="object-cover"
+                priority
+              />
+            </div>
           </div>
 
         </div>
