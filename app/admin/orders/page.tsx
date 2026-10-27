@@ -23,7 +23,6 @@ export default function AdminOrdersPage() {
     const res = await fetch("/api/orders");
     const data = await res.json();
     
-    // Normalize statuses to strictly match our 3 steps
     const normalizedData = data.map((o: any) => {
       let s = o.status || "Pending";
       if (s === "Out for Delivery" || s === "Packaged") s = "Shipping";
@@ -47,7 +46,6 @@ export default function AdminOrdersPage() {
     if (!selectedOrder) return;
     setIsSaving(true);
     
-    // Optimistic UI update
     setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o));
     
     await fetch("/api/orders", {
@@ -59,18 +57,15 @@ export default function AdminOrdersPage() {
     setSelectedOrder(null);
   };
 
-  // Filter Logic
   const filteredOrders = useMemo(() => {
     if (activeTab === "all") return orders;
     return orders.filter(o => o.status === activeTab);
   }, [orders, activeTab]);
 
-  // Counts for tabs
   const pendingCount = orders.filter(o => o.status === "Pending").length;
   const shippingCount = orders.filter(o => o.status === "Shipping").length;
   const deliveredCount = orders.filter(o => o.status === "Delivered").length;
 
-  // 3-STEP TRACKER LOGIC
   const getStepStatus = (currentStatus: string, stepName: string) => {
     const statusMap: any = { "Pending": 0, "Shipping": 1, "Delivered": 2 };
     const currentLevel = statusMap[currentStatus] || 0;
@@ -118,7 +113,6 @@ export default function AdminOrdersPage() {
           {filteredOrders.map((o) => (
             <li key={o.id} className="border-b border-[#2C1A1D]/10 transition-colors">
               
-              {/* SMART TABLE ROW (Name hidden on mobile) */}
               <button 
                 onClick={() => handleOpenModal(o)}
                 className="w-full flex items-center justify-between md:justify-start gap-4 py-4 px-2 hover:bg-white text-left transition-colors"
@@ -128,7 +122,6 @@ export default function AdminOrdersPage() {
                   <p className="mt-0.5 text-[11px] md:text-[11.5px] text-[#2C1A1D]/50">{new Date(o.date).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</p>
                 </div>
 
-                {/* HIDDEN ON MOBILE */}
                 <div className="hidden md:block flex-1 min-w-0">
                   <p className="truncate text-[13.5px] font-semibold text-[#2C1A1D]">{o.customerName}</p>
                   <p className="mt-0.5 truncate text-[12px] text-[#2C1A1D]/50">{o.phone}</p>
@@ -154,13 +147,14 @@ export default function AdminOrdersPage() {
         </ul>
       )}
 
-      {/* ===== FULL-SCREEN MOBILE MODAL ===== */}
+      {/* ===== FULL-SCREEN MOBILE MODAL (FIXED CUT OFF) ===== */}
       {selectedOrder && (
         <div className="fixed inset-0 z-[100] flex bg-black/50 backdrop-blur-sm sm:p-6 items-end sm:items-center justify-center" onClick={() => setSelectedOrder(null)}>
           
-          <div onClick={(e) => e.stopPropagation()} className="relative flex h-[100dvh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-[700px] flex-col bg-[#FBF9F5] shadow-2xl sm:rounded-xl overflow-hidden animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-200">
+          {/* Using fixed inset-0 on mobile with pb-safe to prevent cutting off */}
+          <div onClick={(e) => e.stopPropagation()} className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-[700px] sm:rounded-xl overflow-hidden animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-200">
             
-            {/* Modal Header */}
+            {/* Modal Header (Sticky so it never cuts off) */}
             <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 bg-white px-6 py-4 shrink-0">
               <div>
                 <h2 className="text-[18px] md:text-[20px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order {selectedOrder.id}</h2>
@@ -173,13 +167,11 @@ export default function AdminOrdersPage() {
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Modal Body (Scrollable) */}
             <div className="flex-1 overflow-y-auto p-5 md:p-8">
               
-              {/* 3-STEP PROGRESS BAR (Fixed Ticking) */}
               <div className="mb-10 px-2 md:px-0">
                 <div className="relative flex justify-between">
-                  {/* Connecting Line */}
                   <div className="absolute top-[14px] left-4 right-4 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
                   
                   {["Pending", "Shipping", "Delivered"].map((step) => {
@@ -189,9 +181,7 @@ export default function AdminOrdersPage() {
                     return (
                       <div key={step} className="relative z-10 flex flex-col items-center gap-2">
                         <div className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full border-[2px] transition-all duration-300 ${
-                          isActive 
-                            ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" 
-                            : "bg-[#FBF9F5] border-[#EBE0D3] text-transparent"
+                          isActive ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" : "bg-[#FBF9F5] border-[#EBE0D3] text-transparent"
                         }`}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5 md:h-4 md:w-4">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -208,7 +198,6 @@ export default function AdminOrdersPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                {/* Customer Details */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Customer Details</h4>
                   <div className="bg-white p-4 rounded-lg border border-[#2C1A1D]/10 text-[13px] text-[#2C1A1D]/70 shadow-sm" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
@@ -217,7 +206,6 @@ export default function AdminOrdersPage() {
                     <p>{selectedOrder.address}</p>
                   </div>
 
-                  {/* Status Update Dropdown */}
                   <div className="mt-5">
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Update Status</h4>
                     <select 
@@ -232,7 +220,6 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
-                {/* Order Items */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Items Ordered</h4>
                   <div className="bg-white rounded-lg border border-[#2C1A1D]/10 overflow-hidden shadow-sm">
@@ -273,8 +260,8 @@ export default function AdminOrdersPage() {
               </div>
             </div>
 
-            {/* SAVE BUTTON (Pinned to bottom) */}
-            <div className="p-4 md:p-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
+            {/* SAVE BUTTON (Pinned to bottom, padded for mobile safe area) */}
+            <div className="p-4 md:p-6 pb-8 md:pb-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
               <button 
                 onClick={handleSaveStatus} 
                 disabled={isSaving || newStatus === selectedOrder.status}
