@@ -60,4 +60,4 @@ export function TrustBanner() {
       </div>
     </section>
   );
-}S
+}
