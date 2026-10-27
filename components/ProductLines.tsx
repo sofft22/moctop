@@ -27,16 +27,6 @@ export function ProductLines() {
     <section id="categories" className="w-full bg-[#FBF9F5] py-16 px-6 md:py-24 md:px-12 lg:px-20">
       <div className="mx-auto max-w-[1400px]">
         
-        {/* Header */}
-        <div className="mb-10 flex items-end justify-between">
-          <h2 
-            className="text-[32px] md:text-[48px] font-normal text-[#2C1A1D]"
-            style={{ fontFamily: 'var(--font-dm-serif), serif' }}
-          >
-            Shop by Category
-          </h2>
-        </div>
-
         {/* Grid Layout: 1 column on mobile, 3 on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {categories.map((cat, index) => {
