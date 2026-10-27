@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { ProductModal } from "@/components/ProductModal";
 import { ProductCard } from "@/components/ProductCard";
 
@@ -11,13 +12,24 @@ const CATEGORIES = [
   { id: "mocktails", label: "Mocktails" },
 ];
 
-export default function ShopPage() {
+// We need to wrap the component using useSearchParams in a Suspense boundary
+function ShopContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category");
+
   const [activeCategory, setActiveCategory] = useState("all");
   const [isCatOpen, setIsCatOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+  // Set the category from the URL if it exists
+  useEffect(() => {
+    if (categoryParam) {
+      setActiveCategory(categoryParam);
+    }
+  }, [categoryParam]);
 
   useEffect(() => {
     const cached = localStorage.getItem("mocktopia_products_cache");
@@ -109,9 +121,18 @@ export default function ShopPage() {
         <ProductModal 
           product={selectedProduct} 
           onClose={() => setSelectedProduct(null)} 
-          allProducts={products} // PASSING DATA FOR INSTANT FBT
+          allProducts={products} 
         />
       )}
     </div>
+  );
+}
+
+// Main export with Suspense boundary required by Next.js for useSearchParams
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FBF9F5] flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>}>
+      <ShopContent />
+    </Suspense>
   );
 }
