@@ -73,33 +73,35 @@ export function BoxBuilderSection() {
 
   return (
     <>
-      <section className="w-full bg-[#FBF9F5] py-24 px-6 md:py-32 md:px-12 border-t border-[#2C1A1D]/10">
-        <div className="mx-auto max-w-[1400px] flex flex-col md:flex-row items-center gap-12 md:gap-20">
+      <section className="w-full bg-[#FBF9F5] py-20 px-6 md:py-28 md:px-12 border-t border-[#2C1A1D]/10">
+        {/* Changed max-w to 1600px so it stretches more, giving the image more space */}
+        <div className="mx-auto max-w-[1600px] flex flex-col md:flex-row items-center gap-10 md:gap-16">
           
-          {/* Image Side - Taller and Premium */}
-          <div className="relative w-full md:w-1/2 aspect-[4/5] md:aspect-[3/4] overflow-hidden rounded-2xl bg-[#EBE0D3] shadow-lg">
+          {/* Image Side - Given 55% width and a very tall aspect ratio */}
+          <div className="relative w-full md:w-[55%] aspect-[4/5] md:aspect-[3/4] overflow-hidden rounded-2xl bg-[#EBE0D3] shadow-sm">
             <Image src="/box-builder-home.png" alt="Build Your Own Box" fill className="object-cover" />
           </div>
 
-          {/* Text Side */}
-          <div className="w-full md:w-1/2 flex flex-col justify-center text-center md:text-left">
-            <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/60 mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+          {/* Text Side - Given 45% width */}
+          <div className="w-full md:w-[45%] flex flex-col justify-center text-center md:text-left md:pr-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/60 mb-3" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
               Custom Experience
             </p>
-            <h2 className="text-[44px] md:text-[64px] text-[#2C1A1D] leading-[1.05] mb-6" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+            <h2 className="text-[40px] md:text-[56px] text-[#2C1A1D] leading-[1.05] mb-5" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
               {config.title}
             </h2>
-            <p className="text-[16px] md:text-[18px] leading-[1.7] text-[#2C1A1D]/70 mb-10 max-w-lg mx-auto md:mx-0" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-              Choose your {config.slots} favorite treats and build the perfect box. Freshly baked and packed just the way you want it.
+            
+            {/* UPDATED TEXT: Accommodates both sizes and shortened slightly */}
+            <p className="text-[15px] md:text-[16px] leading-[1.7] text-[#2C1A1D]/70 mb-8 max-w-md mx-auto md:mx-0" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+              Build your perfect box. Choose your favorite treats and customize it exactly how you want, available in boxes of {config.slots} or more.
             </p>
             
-            {/* UPDATED PREMIUM CTA */}
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="w-full max-w-[300px] rounded-md bg-[#2C1A1D] px-8 py-5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#FBF9F5] transition-all hover:bg-[#1F1315] mx-auto md:mx-0"
+              className="w-full max-w-[280px] rounded-md bg-[#2C1A1D] px-8 py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5] transition-all hover:bg-[#1F1315] mx-auto md:mx-0"
               style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
             >
-              Start Building — £{config.price.toFixed(2)}
+              Build Your Box
             </button>
           </div>
         </div>
