@@ -120,12 +120,13 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4">
-      <div className="absolute inset-0" onClick={onClose} />
+    <div className="fixed inset-0 z-[120] flex bg-black/60 backdrop-blur-sm sm:p-4 items-end sm:items-center justify-center">
+      <div className="absolute inset-0 hidden sm:block" onClick={onClose} />
       
-      <div className="relative flex h-[90vh] sm:h-auto sm:max-h-[90vh] w-full max-w-[600px] flex-col bg-[#FBF9F5] shadow-2xl rounded-t-2xl sm:rounded-lg overflow-hidden">
+      {/* FULL SCREEN ON MOBILE */}
+      <div className="relative flex h-[100dvh] sm:h-auto sm:max-h-[90vh] w-full max-w-[600px] flex-col bg-[#FBF9F5] shadow-2xl sm:rounded-lg overflow-hidden">
         
-        <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 px-6 py-5 bg-[#FBF9F5]">
+        <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 px-6 py-5 bg-[#FBF9F5] shrink-0">
           <h2 className="text-[22px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
             {product ? "Edit Product" : "New Product"}
           </h2>
@@ -136,43 +137,29 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
           
-          {/* MULTIPLE IMAGE UPLOAD UI */}
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Product Images</label>
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Product Images (First is Main)</label>
             
             <div className="flex flex-wrap gap-3">
-              {/* Render uploaded images */}
               {images.map((img, i) => (
-                <div key={i} className="relative h-24 w-24 shrink-0 group">
-                  <div className={`relative h-full w-full overflow-hidden rounded-md bg-[#EBE0D3] border-2 ${i === 0 ? 'border-[#2C1A1D]' : 'border-transparent'}`}>
-                    <Image src={img} alt={`Preview ${i}`} fill className="object-cover" />
-                    
-                    {/* Hover Overlay for Actions */}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
-                      <button type="button" onClick={() => removeImage(i)} className="bg-white text-red-500 rounded-sm px-2 py-1 text-[10px] font-bold w-[80%]">Remove</button>
-                      {i !== 0 && (
-                        <button type="button" onClick={() => setMainImage(i)} className="bg-white text-[#2C1A1D] rounded-sm px-2 py-1 text-[10px] font-bold w-[80%]">Make Main</button>
-                      )}
-                    </div>
+                <div key={i} className={`relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-[#EBE0D3] border-2 transition-all ${i === 0 ? "border-[#2C1A1D]" : "border-transparent"}`}>
+                  <Image src={img} alt={`Preview ${i}`} fill className="object-cover" />
+                  
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                    <button onClick={() => removeImage(i)} className="bg-white rounded-full px-2 py-1 text-red-500 text-[10px] font-bold shadow-md">Remove</button>
+                    {i !== 0 && (
+                      <button onClick={() => setMainImage(i)} className="bg-white rounded-full px-2 py-1 text-[#2C1A1D] text-[10px] font-bold shadow-md">Make Main</button>
+                    )}
                   </div>
                   
-                  {/* Main Badge */}
                   {i === 0 && (
-                    <span className="absolute -top-2 -left-2 bg-[#2C1A1D] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">MAIN</span>
+                    <span className="absolute top-1 left-1 bg-[#2C1A1D] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">MAIN</span>
                   )}
                 </div>
               ))}
 
-              {/* Upload Button */}
               <label className="flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#2C1A1D]/20 bg-white text-[#2C1A1D]/50 hover:border-[#2C1A1D] transition-colors">
-                {uploading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" />
-                ) : (
-                  <>
-                    <span className="text-2xl">+</span>
-                    <span className="text-[10px] font-bold uppercase">Add Image</span>
-                  </>
-                )}
+                {uploading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /> : <span className="text-2xl">+</span>}
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
               </label>
             </div>
@@ -186,6 +173,7 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
+              {/* CONVERTED TO £ */}
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Price (£)</label>
               <input value={price} onChange={e => setPrice(e.target.value)} type="number" placeholder="6.50" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
             </div>
@@ -249,7 +237,8 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
         </div>
 
-        <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-[#FBF9F5] p-6">
+        {/* SAVE BUTTON (Pinned to bottom) */}
+        <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-[#FBF9F5] p-6 pb-8 sm:pb-6">
           <button onClick={handleSave} disabled={saving || uploading} className="w-full rounded-md bg-[#2C1A1D] py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5] transition-all hover:bg-[#1F1315] disabled:opacity-50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
             {saving ? "Saving..." : product ? "Save Changes" : "Create Product"}
           </button>
