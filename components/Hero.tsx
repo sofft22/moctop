@@ -69,12 +69,12 @@ export function Hero() {
           >
             {/* Top Line */}
             <h1 className="text-[56px] leading-[0.9] md:text-[85px]">
-              Sips
+              Sips &
             </h1>
             
             {/* Bottom Line */}
             <h1 className="text-[56px] leading-[0.9] md:text-[85px] ml-12 md:ml-20">
-              & Treats.
+              Treats.
             </h1>
           </div>
 
