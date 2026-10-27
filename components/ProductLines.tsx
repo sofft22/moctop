@@ -6,7 +6,7 @@ export function ProductLines() {
     {
       id: "banana-bread",
       title: "Banana Bread",
-      image: "/category-banana-bread.png", 
+      image: "/category-banana-bread.PNG", 
       link: "/shop?category=banana-bread"
     },
     {
