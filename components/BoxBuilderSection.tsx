@@ -74,24 +74,20 @@ export function BoxBuilderSection() {
   return (
     <>
       <section className="w-full bg-[#FBF9F5] py-20 px-6 md:py-28 md:px-12 border-t border-[#2C1A1D]/10">
-        {/* Changed max-w to 1600px so it stretches more, giving the image more space */}
-        <div className="mx-auto max-w-[1600px] flex flex-col md:flex-row items-center gap-10 md:gap-16">
+        <div className="mx-auto max-w-[1400px] flex flex-col md:flex-row items-center gap-8 md:gap-16">
           
-          {/* Image Side - Given 55% width and a very tall aspect ratio */}
-          <div className="relative w-full md:w-[55%] aspect-[4/5] md:aspect-[3/4] overflow-hidden rounded-2xl bg-[#EBE0D3] shadow-sm">
-            <Image src="/box-builder-home.png" alt="Build Your Own Box" fill className="object-cover" />
-          </div>
-
-          {/* Text Side - Given 45% width */}
-          <div className="w-full md:w-[45%] flex flex-col justify-center text-center md:text-left md:pr-8">
-            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/60 mb-3" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-              Custom Experience
-            </p>
-            <h2 className="text-[40px] md:text-[56px] text-[#2C1A1D] leading-[1.05] mb-5" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+          {/* MOBILE: Title comes first. DESKTOP: Title is on the right. */}
+          <div className="w-full md:w-[45%] flex flex-col order-1 md:order-2 text-center md:text-left">
+            
+            <h2 className="text-[36px] md:text-[52px] text-[#2C1A1D] leading-[1.05] mb-6 md:mb-6" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
               {config.title}
             </h2>
-            
-            {/* UPDATED TEXT: Accommodates both sizes and shortened slightly */}
+
+            {/* Mobile Image (Visible only on mobile, right after title) */}
+            <div className="block md:hidden w-full relative aspect-square overflow-hidden rounded-2xl bg-[#EBE0D3] mb-6">
+              <Image src="/box-builder-home.png" alt="Build Your Own Box" fill className="object-cover" />
+            </div>
+
             <p className="text-[15px] md:text-[16px] leading-[1.7] text-[#2C1A1D]/70 mb-8 max-w-md mx-auto md:mx-0" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
               Build your perfect box. Choose your favorite treats and customize it exactly how you want, available in boxes of {config.slots} or more.
             </p>
@@ -104,6 +100,14 @@ export function BoxBuilderSection() {
               Build Your Box
             </button>
           </div>
+
+          {/* DESKTOP Image (Visible only on desktop) */}
+          <div className="hidden md:block w-[55%] order-2 md:order-1">
+            <div className="relative w-full aspect-[4/5] max-h-[600px] overflow-hidden rounded-2xl bg-[#EBE0D3] shadow-sm">
+              <Image src="/box-builder-home.png" alt="Build Your Own Box" fill className="object-cover object-center" />
+            </div>
+          </div>
+
         </div>
       </section>
 
