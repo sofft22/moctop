@@ -11,7 +11,6 @@ export default function AdminOrdersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   
-  // State for the modal's status dropdown
   const [newStatus, setNewStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -24,10 +23,10 @@ export default function AdminOrdersPage() {
     const res = await fetch("/api/orders");
     const data = await res.json();
     
-    // Normalize old statuses just in case
+    // Normalize statuses to strictly match our 3 steps
     const normalizedData = data.map((o: any) => {
       let s = o.status || "Pending";
-      if (s === "Out for Delivery" || s === "In the Oven") s = "Shipping";
+      if (s === "Out for Delivery" || s === "Packaged") s = "Shipping";
       return { ...o, status: s };
     });
     
@@ -63,10 +62,7 @@ export default function AdminOrdersPage() {
   // Filter Logic
   const filteredOrders = useMemo(() => {
     if (activeTab === "all") return orders;
-    if (activeTab === "pending") return orders.filter(o => o.status === "Pending");
-    if (activeTab === "shipping") return orders.filter(o => o.status === "Shipping");
-    if (activeTab === "delivered") return orders.filter(o => o.status === "Delivered");
-    return orders;
+    return orders.filter(o => o.status === activeTab);
   }, [orders, activeTab]);
 
   // Counts for tabs
@@ -74,13 +70,14 @@ export default function AdminOrdersPage() {
   const shippingCount = orders.filter(o => o.status === "Shipping").length;
   const deliveredCount = orders.filter(o => o.status === "Delivered").length;
 
-  // 3-STEP TRACKER LOGIC (Synced exactly with our 3 statuses)
+  // 3-STEP TRACKER LOGIC
   const getStepStatus = (currentStatus: string, stepName: string) => {
     const statusMap: any = { "Pending": 0, "Shipping": 1, "Delivered": 2 };
     const currentLevel = statusMap[currentStatus] || 0;
     const stepLevel = ["Pending", "Shipping", "Delivered"].indexOf(stepName);
     
-    if (stepLevel <= currentLevel) return "active";
+    if (stepLevel < currentLevel) return "completed";
+    if (stepLevel === currentLevel) return "active";
     return "inactive";
   };
 
@@ -96,9 +93,9 @@ export default function AdminOrdersPage() {
       <div className="mb-6 border-b border-[#2C1A1D]/10 pb-3 flex items-center gap-6 overflow-x-auto no-scrollbar">
         {[
           { id: "all", label: "All Orders", count: orders.length },
-          { id: "pending", label: "Pending", count: pendingCount },
-          { id: "shipping", label: "Shipping", count: shippingCount },
-          { id: "delivered", label: "Delivered", count: deliveredCount },
+          { id: "Pending", label: "Pending", count: pendingCount },
+          { id: "Shipping", label: "Shipping", count: shippingCount },
+          { id: "Delivered", label: "Delivered", count: deliveredCount },
         ].map((tab) => (
           <button 
             key={tab.id}
@@ -115,29 +112,30 @@ export default function AdminOrdersPage() {
       {loading ? (
         <div className="flex justify-center py-24"><div className="h-6 w-6 animate-spin rounded-full border-[2.5px] border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>
       ) : filteredOrders.length === 0 ? (
-        <p className="py-24 text-center text-[13.5px] font-medium text-[#2C1A1D]/50">No orders found in this category.</p>
+        <p className="py-24 text-center text-[13.5px] font-medium text-[#2C1A1D]/50">No orders found.</p>
       ) : (
         <ul className="flex flex-col border-t border-[#2C1A1D]/10">
           {filteredOrders.map((o) => (
             <li key={o.id} className="border-b border-[#2C1A1D]/10 transition-colors">
               
-              {/* SMART TABLE ROW */}
+              {/* SMART TABLE ROW (Name hidden on mobile) */}
               <button 
                 onClick={() => handleOpenModal(o)}
-                className="w-full flex items-center gap-4 py-4 px-2 hover:bg-white text-left transition-colors"
+                className="w-full flex items-center justify-between md:justify-start gap-4 py-4 px-2 hover:bg-white text-left transition-colors"
               >
-                <div className="w-full md:w-[120px] shrink-0">
-                  <p className="text-[13.5px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{o.id}</p>
-                  <p className="mt-0.5 text-[11.5px] text-[#2C1A1D]/50">{new Date(o.date).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</p>
+                <div className="w-[100px] md:w-[120px] shrink-0">
+                  <p className="text-[13px] md:text-[13.5px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{o.id}</p>
+                  <p className="mt-0.5 text-[11px] md:text-[11.5px] text-[#2C1A1D]/50">{new Date(o.date).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</p>
                 </div>
 
-                <div className="flex-1 min-w-0">
+                {/* HIDDEN ON MOBILE */}
+                <div className="hidden md:block flex-1 min-w-0">
                   <p className="truncate text-[13.5px] font-semibold text-[#2C1A1D]">{o.customerName}</p>
                   <p className="mt-0.5 truncate text-[12px] text-[#2C1A1D]/50">{o.phone}</p>
                 </div>
 
-                <div className="w-[100px] shrink-0">
-                  <span className={`inline-block w-full text-center rounded-md border px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider ${
+                <div className="w-[90px] md:w-[120px] shrink-0 text-center md:text-left">
+                  <span className={`inline-block w-full text-center rounded-md border px-2 py-1 text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${
                     o.status === "Delivered" ? "border-green-200 bg-green-50 text-green-700" :
                     o.status === "Shipping" ? "border-blue-200 bg-blue-50 text-blue-700" :
                     "border-[#2C1A1D]/20 bg-[#EBE0D3] text-[#2C1A1D]"
@@ -146,8 +144,8 @@ export default function AdminOrdersPage() {
                   </span>
                 </div>
 
-                <div className="w-[80px] shrink-0 text-right">
-                  <p className="text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{o.total?.toLocaleString()}</p>
+                <div className="w-[70px] md:w-[100px] shrink-0 text-right">
+                  <p className="text-[13px] md:text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{o.total?.toLocaleString()}</p>
                 </div>
               </button>
 
@@ -160,14 +158,13 @@ export default function AdminOrdersPage() {
       {selectedOrder && (
         <div className="fixed inset-0 z-[100] flex bg-black/50 backdrop-blur-sm sm:p-6 items-end sm:items-center justify-center" onClick={() => setSelectedOrder(null)}>
           
-          {/* On mobile: w-full h-full rounded-none. On desktop: max-w-[700px] rounded-xl */}
           <div onClick={(e) => e.stopPropagation()} className="relative flex h-[100dvh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-[700px] flex-col bg-[#FBF9F5] shadow-2xl sm:rounded-xl overflow-hidden animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-200">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 bg-white px-6 py-4">
+            <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 bg-white px-6 py-4 shrink-0">
               <div>
-                <h2 className="text-[20px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order {selectedOrder.id}</h2>
-                <p className="text-[12px] text-[#2C1A1D]/50 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                <h2 className="text-[18px] md:text-[20px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order {selectedOrder.id}</h2>
+                <p className="text-[11px] md:text-[12px] text-[#2C1A1D]/50 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
                   {new Date(selectedOrder.date).toLocaleDateString("en-NG", { weekday: 'long', day: "numeric", month: "long", year: "numeric" })}
                 </p>
               </div>
@@ -177,26 +174,30 @@ export default function AdminOrdersPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-6 md:p-8">
+            <div className="flex-1 overflow-y-auto p-5 md:p-8">
               
-              {/* 3-STEP PROGRESS BAR */}
-              <div className="mb-8">
+              {/* 3-STEP PROGRESS BAR (Fixed Ticking) */}
+              <div className="mb-10 px-2 md:px-0">
                 <div className="relative flex justify-between">
-                  <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
+                  {/* Connecting Line */}
+                  <div className="absolute top-[14px] left-4 right-4 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
                   
                   {["Pending", "Shipping", "Delivered"].map((step) => {
-                    const status = getStepStatus(selectedOrder.status || "Pending", step);
-                    const isActive = status === "active";
+                    const status = getStepStatus(newStatus || selectedOrder.status || "Pending", step);
+                    const isActive = status === "active" || status === "completed";
+                    
                     return (
                       <div key={step} className="relative z-10 flex flex-col items-center gap-2">
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all bg-[#FBF9F5] ${
-                          isActive ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" : "border-[#EBE0D3] text-transparent"
+                        <div className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full border-[2px] transition-all duration-300 ${
+                          isActive 
+                            ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" 
+                            : "bg-[#FBF9F5] border-[#EBE0D3] text-transparent"
                         }`}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-4 w-4">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5 md:h-4 md:w-4">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-[#2C1A1D]" : "text-[#2C1A1D]/30"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                        <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-[#2C1A1D]" : "text-[#2C1A1D]/30"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                           {step}
                         </span>
                       </div>
@@ -216,8 +217,8 @@ export default function AdminOrdersPage() {
                     <p>{selectedOrder.address}</p>
                   </div>
 
-                  {/* Status Update Dropdown (Controlled by local state) */}
-                  <div className="mt-4">
+                  {/* Status Update Dropdown */}
+                  <div className="mt-5">
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Update Status</h4>
                     <select 
                       value={newStatus} 
@@ -250,7 +251,6 @@ export default function AdminOrdersPage() {
                       </div>
                     ))}
                     
-                    {/* Totals */}
                     <div className="p-4 bg-[#FBF9F5] border-t border-[#2C1A1D]/10 flex flex-col gap-2">
                       <div className="flex justify-between text-[12px] text-[#2C1A1D]/60">
                         <span>Subtotal</span><span>£{selectedOrder.subtotal?.toLocaleString()}</span>
@@ -274,7 +274,7 @@ export default function AdminOrdersPage() {
             </div>
 
             {/* SAVE BUTTON (Pinned to bottom) */}
-            <div className="p-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
+            <div className="p-4 md:p-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
               <button 
                 onClick={handleSaveStatus} 
                 disabled={isSaving || newStatus === selectedOrder.status}
