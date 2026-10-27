@@ -89,13 +89,20 @@ export function Footer() {
             ))}
           </div>
 
-          {/* Column 3: Follow Us */}
+          {/* Column 3: Socials */}
           <div className="flex flex-col gap-4">
             <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2 text-white/50" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>
-              Follow Us
+              Socials
             </h4>
-            <a href="#" className="text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Instagram</a>
-            <a href="#" className="text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>TikTok</a>
+            <a 
+              href="https://www.tiktok.com/@mocktopiatreats" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-[13px] text-white/70 hover:text-white transition-colors" 
+              style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+            >
+              TikTok
+            </a>
             <a href="#" className="text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>WhatsApp</a>
           </div>
 
