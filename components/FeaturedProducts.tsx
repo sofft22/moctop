@@ -18,7 +18,8 @@ export function FeaturedProducts({ onProductClick }: Props) {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        const featured = parsed.filter((p: any) => p.featured === 1 && p.inStock === 1);
+        // REMOVED inStock === 1 filter so sold out items show
+        const featured = parsed.filter((p: any) => p.featured === 1);
         setFeaturedItems(featured.slice(0, 6));
         setLoading(false);
       } catch (e) {
@@ -30,7 +31,8 @@ export function FeaturedProducts({ onProductClick }: Props) {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        const featured = data.filter((p: any) => p.featured === 1 && p.inStock === 1);
+        // REMOVED inStock === 1 filter here too
+        const featured = data.filter((p: any) => p.featured === 1);
         setFeaturedItems(featured.slice(0, 6));
         setLoading(false);
         
@@ -72,17 +74,16 @@ export function FeaturedProducts({ onProductClick }: Props) {
           {featuredItems.map((item, idx) => (
             <div 
               key={item.id} 
-              // Increased border radius from rounded-md to rounded-xl
               className={`${idx >= 4 ? "lg:hidden" : "block"} rounded-xl overflow-hidden group cursor-pointer`} 
               onClick={() => onProductClick(item)} 
             >
               <ProductCard 
                 product={{
                   ...item,
-                  // Price styling exactly like the modal: light weight but bold
-                  price: `₦${item.price.toLocaleString()}`, 
+                  // CHANGED TO £ (POUNDS)
+                  price: `£${item.price.toLocaleString()}`, 
                   priceClassName: "font-bold text-[13px] text-[#2C1A1D]/70 font-montserrat",
-                  sizes: JSON.parse(item.sizes)
+                  sizes: JSON.parse(item.sizes || "[]")
                 }} 
                 priority={idx < 2}
               />
