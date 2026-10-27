@@ -10,7 +10,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { getOrders } from "@/lib/orders";
 
 interface RevenuePoint {
   date: string;
@@ -25,8 +24,8 @@ export function AdminDashboardClient() {
     revenue: 0,
     orders: 0,
     pendingOrders: 0,
-    pendingReviews: 0,
     outOfStock: 0,
+    activePromos: 0,
   });
 
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -39,45 +38,62 @@ export function AdminDashboardClient() {
       return;
     }
 
-    // 2. Load Data from LocalStorage
-    const orders = getOrders();
-    const reviews = JSON.parse(localStorage.getItem("mocktopia_reviews") || "[]");
-    const products = JSON.parse(localStorage.getItem("mocktopia_products") || "[]");
+    // 2. Fetch Real Data from APIs
+    const fetchData = async () => {
+      try {
+        const [ordersRes, productsRes, promosRes] = await Promise.all([
+          fetch("/api/orders"),
+          fetch("/api/products"),
+          fetch("/api/promos")
+        ]);
 
-    // 3. Calculate Stats
-    const totalRev = orders.reduce((sum, o) => sum + o.total, 0);
-    const pendingOrders = orders.filter((o) => o.status === "Pending").length;
-    const pendingReviews = reviews.filter((r: any) => !r.approved).length;
-    const outOfStock = products.filter((p: any) => !p.inStock).length;
+        const orders = await ordersRes.json();
+        const products = await productsRes.json();
+        const promos = await promosRes.json();
 
-    setStats({
-      revenue: totalRev,
-      orders: orders.length,
-      pendingOrders,
-      pendingReviews,
-      outOfStock,
-    });
+        // 3. Calculate Stats
+        const totalRev = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+        const pendingOrders = orders.filter((o: any) => o.status === "Pending").length;
+        const outOfStock = products.filter((p: any) => p.inStock === 0).length;
+        const activePromos = promos.filter((p: any) => p.isActive === 1).length;
 
-    // 4. Recent Orders (Top 5)
-    setRecentOrders(orders.slice(0, 5));
+        setStats({
+          revenue: totalRev,
+          orders: orders.length,
+          pendingOrders,
+          outOfStock,
+          activePromos,
+        });
 
-    // 5. Build Chart Data (Last 30 days)
-    const byDay: Record<string, number> = {};
-    orders.forEach((o) => {
-      const day = new Date(o.date).toISOString().slice(0, 10);
-      byDay[day] = (byDay[day] ?? 0) + o.total;
-    });
+        // 4. Recent Orders (Top 5)
+        // Sort by date descending just in case
+        const sortedOrders = [...orders].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setRecentOrders(sortedOrders.slice(0, 5));
 
-    const chartData: RevenuePoint[] = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      chartData.push({ date: key, revenue: byDay[key] ?? 0 });
-    }
+        // 5. Build Chart Data (Last 30 days)
+        const byDay: Record<string, number> = {};
+        orders.forEach((o: any) => {
+          const day = new Date(o.date).toISOString().slice(0, 10);
+          byDay[day] = (byDay[day] ?? 0) + o.total;
+        });
 
-    setRevenueData(chartData);
-    setLoading(false);
+        const chartData: RevenuePoint[] = [];
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const key = d.toISOString().slice(0, 10);
+          chartData.push({ date: key, revenue: byDay[key] ?? 0 });
+        }
+
+        setRevenueData(chartData);
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [router]);
 
   if (loading) {
@@ -114,7 +130,7 @@ export function AdminDashboardClient() {
             Total Revenue
           </p>
           <p className="mt-3 text-[38px] font-semibold leading-none" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            ₦{stats.revenue.toLocaleString()}
+            £{stats.revenue.toLocaleString()}
           </p>
           <p className="mt-4 text-[13px] text-[#FBF9F5]/80" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
             From {stats.orders} total orders
@@ -135,18 +151,18 @@ export function AdminDashboardClient() {
           {stats.pendingOrders > 0 && <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]">Needs attention →</p>}
         </button>
 
-        {/* Pending Reviews Card */}
+        {/* Active Promos Card */}
         <button 
-          onClick={() => router.push("/admin/reviews")}
-          className={`rounded-xl border p-6 text-left transition-colors ${stats.pendingReviews > 0 ? "border-[#2C1A1D]/30 bg-white shadow-sm hover:border-[#2C1A1D]" : "border-[#2C1A1D]/10 bg-[#FBF9F5]"}`}
+          onClick={() => router.push("/admin/promos")}
+          className={`rounded-xl border p-6 text-left transition-colors ${stats.activePromos > 0 ? "border-[#2C1A1D]/30 bg-white shadow-sm hover:border-[#2C1A1D]" : "border-[#2C1A1D]/10 bg-[#FBF9F5]"}`}
         >
-          <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${stats.pendingReviews > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/40"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            Pending Reviews
+          <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${stats.activePromos > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/40"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+            Active Promos
           </p>
-          <p className={`mt-3 text-[34px] font-semibold leading-none ${stats.pendingReviews > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            {stats.pendingReviews}
+          <p className={`mt-3 text-[34px] font-semibold leading-none ${stats.activePromos > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+            {stats.activePromos}
           </p>
-          {stats.pendingReviews > 0 && <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]">Needs attention →</p>}
+          {stats.activePromos > 0 && <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]">View Promos →</p>}
         </button>
       </div>
 
@@ -186,11 +202,11 @@ export function AdminDashboardClient() {
                 tick={{ fontSize: 11, fill: "#888" }} 
                 axisLine={false} 
                 tickLine={false} 
-                tickFormatter={(v) => v >= 1000 ? `${v/1000}k` : v}
+                tickFormatter={(v) => v >= 1000 ? `£${v/1000}k` : `£${v}`}
               />
               <Tooltip 
                 contentStyle={{ background: "#2C1A1D", border: "none", borderRadius: "8px", color: "#fff", fontSize: "13px" }}
-                formatter={(value: any) => [`₦${value.toLocaleString()}`, "Revenue"]}
+                formatter={(value: any) => [`£${value.toLocaleString()}`, "Revenue"]}
                 labelFormatter={(label: any) => new Date(label).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
               />
               <Line 
@@ -224,25 +240,27 @@ export function AdminDashboardClient() {
         ) : (
           <ul className="flex flex-col border-t border-[#2C1A1D]/5">
             {recentOrders.map((o) => (
-              <li key={o.orderId}>
+              <li key={o.id}>
                 <button 
                   onClick={() => router.push("/admin/orders")}
                   className="flex w-full items-center justify-between gap-4 border-b border-[#2C1A1D]/5 py-4 text-left last:border-0 hover:bg-[#FBF9F5] px-2 transition-colors"
                 >
                   <div>
-                    <p className="text-[13px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{o.orderId}</p>
+                    <p className="text-[13px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{o.id}</p>
                     <p className="mt-0.5 text-[12px] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
                       {o.customerName} · {new Date(o.date).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-[13px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                      ₦{o.total.toLocaleString()}
+                      £{o.total.toLocaleString()}
                     </span>
                     <span className={`rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${
-                      o.status === "Delivered" ? "bg-green-100 text-green-700" : "bg-[#EBE0D3] text-[#2C1A1D]"
+                      o.status === "Delivered" ? "bg-green-100 text-green-700" : 
+                      o.status === "Shipping" ? "bg-blue-100 text-blue-700" :
+                      "bg-[#EBE0D3] text-[#2C1A1D]"
                     }`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                      {o.status}
+                      {o.status || "Pending"}
                     </span>
                   </div>
                 </button>
