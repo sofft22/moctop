@@ -138,7 +138,6 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <div className="w-[70px] md:w-[100px] shrink-0 text-right">
-                  {/* CONVERTED TO £ */}
                   <p className="text-[13px] md:text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{o.total?.toLocaleString()}</p>
                 </div>
               </button>
@@ -148,11 +147,11 @@ export default function AdminOrdersPage() {
         </ul>
       )}
 
-      {/* ===== FULL-SCREEN MOBILE MODAL ===== */}
+      {/* ===== FULL-SCREEN SCROLLABLE MODAL ===== */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-[100] flex bg-black/50 backdrop-blur-sm sm:p-6 items-end sm:items-center justify-center" onClick={() => setSelectedOrder(null)}>
+        <div className="fixed inset-0 z-[100] flex bg-black/60 backdrop-blur-sm sm:p-6 sm:items-center justify-center" onClick={() => setSelectedOrder(null)}>
           
-          <div onClick={(e) => e.stopPropagation()} className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-[700px] sm:rounded-xl overflow-hidden animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-200">
+          <div onClick={(e) => e.stopPropagation()} className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-[700px] sm:rounded-xl overflow-y-auto">
             
             <div className="flex items-center justify-between border-b border-[#2C1A1D]/10 bg-white px-6 py-4 shrink-0">
               <div>
@@ -166,7 +165,7 @@ export default function AdminOrdersPage() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 md:p-8">
+            <div className="p-5 md:p-8">
               
               <div className="mb-10 px-2 md:px-0">
                 <div className="relative flex justify-between">
@@ -258,7 +257,8 @@ export default function AdminOrdersPage() {
               </div>
             </div>
 
-            <div className="p-4 md:p-6 pb-8 md:pb-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
+            {/* SAVE BUTTON */}
+            <div className="mt-auto p-4 md:p-6 pb-8 md:pb-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
               <button 
                 onClick={handleSaveStatus} 
                 disabled={isSaving || newStatus === selectedOrder.status}
