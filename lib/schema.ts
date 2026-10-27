@@ -51,8 +51,10 @@ export const settings = sqliteTable("settings", {
   bankName: text("bankName"),
   accountName: text("accountName"),
   accountNumber: text("accountNumber"),
-  bannerText: text("bannerText"),         // NEW: For the announcement
-  bannerActive: integer("bannerActive").default(0), // NEW: Toggle ON/OFF
+  bannerText: text("bannerText"),
+  bannerActive: integer("bannerActive").default(0),
+  // NEW COLUMN FOR BOX BUILDER
+  boxBuilderConfig: text("boxBuilderConfig"), 
 });
 
 export const promos = sqliteTable("promos", {
