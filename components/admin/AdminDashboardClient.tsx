@@ -24,7 +24,7 @@ export function AdminDashboardClient() {
     revenue: 0,
     orders: 0,
     pendingOrders: 0,
-    outOfStock: 0,
+    totalProducts: 0,
     activePromos: 0,
   });
 
@@ -32,13 +32,11 @@ export function AdminDashboardClient() {
   const [revenueData, setRevenueData] = useState<RevenuePoint[]>([]);
 
   useEffect(() => {
-    // 1. Auth Check
     if (typeof window !== "undefined" && localStorage.getItem("mocktopia_admin_logged_in") !== "true") {
       router.push("/admin/login");
       return;
     }
 
-    // 2. Fetch Real Data from APIs
     const fetchData = async () => {
       try {
         const [ordersRes, productsRes, promosRes] = await Promise.all([
@@ -51,26 +49,25 @@ export function AdminDashboardClient() {
         const products = await productsRes.json();
         const promos = await promosRes.json();
 
-        // 3. Calculate Stats
+        // Calculate Stats
         const totalRev = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
         const pendingOrders = orders.filter((o: any) => o.status === "Pending").length;
-        const outOfStock = products.filter((p: any) => p.inStock === 0).length;
+        const totalProducts = products.length;
         const activePromos = promos.filter((p: any) => p.isActive === 1).length;
 
         setStats({
           revenue: totalRev,
           orders: orders.length,
           pendingOrders,
-          outOfStock,
+          totalProducts,
           activePromos,
         });
 
-        // 4. Recent Orders (Top 5)
-        // Sort by date descending just in case
+        // Recent Orders (Top 5)
         const sortedOrders = [...orders].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setRecentOrders(sortedOrders.slice(0, 5));
 
-        // 5. Build Chart Data (Last 30 days)
+        // Build Chart Data (Last 30 days)
         const byDay: Record<string, number> = {};
         orders.forEach((o: any) => {
           const day = new Date(o.date).toISOString().slice(0, 10);
@@ -121,9 +118,9 @@ export function AdminDashboardClient() {
       </div>
 
       {/* TOP STATS ROW */}
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:grid lg:grid-cols-4">
         
-        {/* Main Revenue Card */}
+        {/* Main Revenue Card (Full width on mobile) */}
         <div className="relative overflow-hidden rounded-xl bg-[#2C1A1D] p-6 text-[#FBF9F5] shadow-sm lg:col-span-2">
           <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
@@ -137,41 +134,46 @@ export function AdminDashboardClient() {
           </p>
         </div>
 
-        {/* Pending Orders Card */}
-        <button 
-          onClick={() => router.push("/admin/orders")}
-          className={`rounded-xl border p-6 text-left transition-colors ${stats.pendingOrders > 0 ? "border-[#2C1A1D]/30 bg-white shadow-sm hover:border-[#2C1A1D]" : "border-[#2C1A1D]/10 bg-[#FBF9F5]"}`}
-        >
-          <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${stats.pendingOrders > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/40"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            Pending Orders
-          </p>
-          <p className={`mt-3 text-[34px] font-semibold leading-none ${stats.pendingOrders > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            {stats.pendingOrders}
-          </p>
-          {stats.pendingOrders > 0 && <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]">Needs attention →</p>}
-        </button>
+        {/* 2 Side-by-Side Cards Container */}
+        <div className="grid grid-cols-2 gap-4 lg:col-span-2">
+          
+          {/* Pending Orders Card */}
+          <button 
+            onClick={() => router.push("/admin/orders")}
+            className={`rounded-xl border p-4 sm:p-6 text-left transition-colors ${stats.pendingOrders > 0 ? "border-[#2C1A1D]/30 bg-white shadow-sm hover:border-[#2C1A1D]" : "border-[#2C1A1D]/10 bg-[#FBF9F5]"}`}
+          >
+            <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${stats.pendingOrders > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/40"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+              Pending Orders
+            </p>
+            <p className={`mt-3 text-[28px] sm:text-[34px] font-semibold leading-none ${stats.pendingOrders > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+              {stats.pendingOrders}
+            </p>
+            {stats.pendingOrders > 0 && <p className="mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]">Needs attention →</p>}
+          </button>
 
-        {/* Active Promos Card */}
-        <button 
-          onClick={() => router.push("/admin/promos")}
-          className={`rounded-xl border p-6 text-left transition-colors ${stats.activePromos > 0 ? "border-[#2C1A1D]/30 bg-white shadow-sm hover:border-[#2C1A1D]" : "border-[#2C1A1D]/10 bg-[#FBF9F5]"}`}
-        >
-          <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${stats.activePromos > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/40"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            Active Promos
-          </p>
-          <p className={`mt-3 text-[34px] font-semibold leading-none ${stats.activePromos > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            {stats.activePromos}
-          </p>
-          {stats.activePromos > 0 && <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]">View Promos →</p>}
-        </button>
+          {/* Active Promos Card */}
+          <button 
+            onClick={() => router.push("/admin/promos")}
+            className={`rounded-xl border p-4 sm:p-6 text-left transition-colors ${stats.activePromos > 0 ? "border-[#2C1A1D]/30 bg-white shadow-sm hover:border-[#2C1A1D]" : "border-[#2C1A1D]/10 bg-[#FBF9F5]"}`}
+          >
+            <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${stats.activePromos > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/40"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+              Active Promos
+            </p>
+            <p className={`mt-3 text-[28px] sm:text-[34px] font-semibold leading-none ${stats.activePromos > 0 ? "text-[#2C1A1D]" : "text-[#2C1A1D]/20"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+              {stats.activePromos}
+            </p>
+            {stats.activePromos > 0 && <p className="mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]">View Promos →</p>}
+          </button>
+
+        </div>
       </div>
 
-      {/* OUT OF STOCK NOTIFICATION */}
+      {/* TOTAL PRODUCTS NOTIFICATION */}
       <div className="mb-6 rounded-xl border border-[#2C1A1D]/10 bg-white p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
-            <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Out of Stock</span>
-            <span className="text-[15px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{stats.outOfStock}</span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Total Products</span>
+            <span className="text-[15px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{stats.totalProducts}</span>
           </div>
           <button onClick={() => router.push("/admin/products")} className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D] hover:underline" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
             Manage →
