@@ -1,226 +1,209 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Image from "next/image";
+import { useCart } from "@/app/CartContext";
 
-interface Zone {
-  name: string;
-  price: number;
+interface Props {
+  config: any;
+  onClose: () => void;
 }
 
-interface Topping {
-  id: string;
-  name: string;
-  image: string;
-}
+export function BoxBuilderModal({ config, onClose }: Props) {
+  const { addToCart } = useCart();
+  
+  const [selectedSlots, setSelectedSlots] = useState<number>(6);
+  const [selectedToppings, setSelectedToppings] = useState<Record<string, number>>({});
 
-export default function AdminSettingsPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
+  const price6 = config.price6 || config.price || 20;
+  const price8 = config.price8 || (config.price ? config.price + 5 : 25);
+  const currentPrice = selectedSlots === 6 ? price6 : price8; 
 
-  // Delivery Zones State
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [newZoneName, setNewZoneName] = useState("");
-  const [newZonePrice, setNewZonePrice] = useState("");
+  const totalSelected = Object.values(selectedToppings).reduce((a, b) => a + b, 0);
+  const isComplete = totalSelected === selectedSlots;
 
-  // Banner State
-  const [bannerText, setBannerText] = useState("");
-  const [bannerActive, setBannerActive] = useState(false);
-
-  // BOX BUILDER STATE
-  const [boxConfig, setBoxConfig] = useState({
-    isActive: false,
-    title: "Build Your Own Box",
-    price: 20,
-    slots: 6,
-    toppings: [] as Topping[]
-  });
-  const [newToppingName, setNewToppingName] = useState("");
-  const [uploadingTopping, setUploadingTopping] = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem("mocktopia_admin_logged_in") !== "true") {
-      router.push("/admin/login");
-      return;
-    }
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data) {
-          if (data.deliveryZones) {
-            try {
-              const parsed = JSON.parse(data.deliveryZones);
-              if (Array.isArray(parsed)) setZones(parsed);
-            } catch (e) {}
-          }
-          setBannerText(data.bannerText || "");
-          setBannerActive(data.bannerActive === 1);
-          
-          if (data.boxBuilderConfig) {
-            try {
-              setBoxConfig(JSON.parse(data.boxBuilderConfig));
-            } catch (e) {}
-          }
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [router]);
-
-  const addZone = () => {
-    if (!newZoneName || !newZonePrice) return;
-    setZones([...zones, { name: newZoneName, price: Number(newZonePrice) }]);
-    setNewZoneName("");
-    setNewZonePrice("");
+  const handleAddOne = (toppingId: string) => {
+    if (totalSelected >= selectedSlots) return;
+    setSelectedToppings(prev => ({
+      ...prev,
+      [toppingId]: (prev[toppingId] || 0) + 1
+    }));
   };
 
-  const removeZone = (index: number) => {
-    setZones(zones.filter((_, i) => i !== index));
-  };
-
-  // TOPPING UPLOAD LOGIC
-  const handleToppingUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !newToppingName) return alert("Enter topping name first");
-
-    setUploadingTopping(true);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 400;
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-        
-        const newTopping = { id: Date.now().toString(), name: newToppingName, image: dataUrl };
-        setBoxConfig({ ...boxConfig, toppings: [...boxConfig.toppings, newTopping] });
-        setNewToppingName("");
-        setUploadingTopping(false);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
-
-  const removeTopping = (id: string) => {
-    setBoxConfig({ ...boxConfig, toppings: boxConfig.toppings.filter(t => t.id !== id) });
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    await fetch("/api/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        deliveryZones: JSON.stringify(zones),
-        bannerText,
-        bannerActive: bannerActive ? 1 : 0,
-        boxBuilderConfig: JSON.stringify(boxConfig), // SAVE BOX CONFIG
-      }),
+  const handleRemoveAll = (e: React.MouseEvent, toppingId: string) => {
+    e.stopPropagation(); // Stop the click from adding another one
+    setSelectedToppings(prev => {
+      const newState = { ...prev };
+      delete newState[toppingId];
+      return newState;
     });
-    
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   };
 
-  if (loading) return <div className="flex justify-center py-24 min-h-screen bg-[#FBF9F5]"><div className="h-6 w-6 animate-spin rounded-full border-[2.5px] border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>;
+  const handleAddToCart = () => {
+    if (!isComplete) return;
+    
+    const selectionDetails = Object.entries(selectedToppings)
+      .map(([id, qty]) => {
+        const topping = config.toppings.find((t: any) => t.id === id);
+        return `${qty}x ${topping.name}`;
+      })
+      .join(", ");
+
+    const customProduct = {
+      id: `box-${Date.now()}`,
+      title: config.title,
+      price: currentPrice,
+      image: config.toppings[0]?.image || "/placeholder.png",
+      size: `Box of ${selectedSlots} (${selectionDetails})`,
+    };
+
+    addToCart(customProduct, customProduct.size, 1);
+    onClose();
+  };
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8 sm:py-10 min-h-screen bg-[#FBF9F5]">
-      <div className="mb-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Configuration</p>
-        <h1 className="mt-1 text-[32px] font-normal text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Settings</h1>
-      </div>
-
-      <form onSubmit={handleSave} className="flex flex-col gap-8">
+    <div 
+      className="fixed inset-0 z-[120] flex bg-[#1F1315]/80 backdrop-blur-sm sm:p-6 items-center justify-center" 
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 hidden sm:block" />
+      
+      <div 
+        onClick={(e) => e.stopPropagation()} 
+        className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px] sm:rounded-xl overflow-y-auto overscroll-contain"
+      >
         
-        {/* BOX BUILDER */}
-        <div className="rounded-lg border border-[#2C1A1D]/10 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[14px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Build Your Own Box</h2>
-            <button type="button" onClick={() => setBoxConfig({ ...boxConfig, isActive: !boxConfig.isActive })} className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${boxConfig.isActive ? "bg-[#2C1A1D]" : "bg-[#2C1A1D]/20"}`}>
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${boxConfig.isActive ? "translate-x-[22px]" : "translate-x-0.5"}`} />
-            </button>
-          </div>
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-6 py-6 md:px-10 border-b border-[#2C1A1D]/10 bg-white shrink-0">
+          <span className="uppercase tracking-[0.2em] text-[12px] font-semibold text-[#2C1A1D]" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>
+            Mocktopia
+          </span>
+          <button onClick={onClose} className="text-[#2C1A1D]/40 hover:text-[#2C1A1D] transition-colors p-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+
+        {/* CONTENT */}
+        <div className="p-6 md:p-10 flex-1 pb-10">
           
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60">Price (£)</label>
-              <input value={boxConfig.price} onChange={(e) => setBoxConfig({ ...boxConfig, price: Number(e.target.value) })} type="number" className="w-full rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" />
-            </div>
-            <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60">Number of Slots</label>
-              <input value={boxConfig.slots} onChange={(e) => setBoxConfig({ ...boxConfig, slots: Number(e.target.value) })} type="number" className="w-full rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" />
+          <div className="mb-10">
+            <h2 className="text-[28px] md:text-[36px] text-[#2C1A1D] mb-2" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+              Build Your Box
+            </h2>
+            <p className="text-[12px] text-[#2C1A1D]/60 mb-6" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+              Box of {selectedSlots} — <span className="font-bold text-[#2C1A1D]">£{currentPrice.toFixed(2)}</span>
+            </p>
+
+            <div className="flex gap-6 border-b border-[#2C1A1D]/10 pb-3">
+              <button 
+                onClick={() => { setSelectedSlots(6); setSelectedToppings({}); }}
+                className={`text-[11px] font-bold uppercase tracking-[0.1em] pb-1 transition-colors border-b-2 ${selectedSlots === 6 ? "border-[#2C1A1D] text-[#2C1A1D]" : "border-transparent text-[#2C1A1D]/40 hover:text-[#2C1A1D]"}`}
+                style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+              >
+                Select 6 — £{price6.toFixed(2)}
+              </button>
+              <button 
+                onClick={() => { setSelectedSlots(8); setSelectedToppings({}); }}
+                className={`text-[11px] font-bold uppercase tracking-[0.1em] pb-1 transition-colors border-b-2 ${selectedSlots === 8 ? "border-[#2C1A1D] text-[#2C1A1D]" : "border-transparent text-[#2C1A1D]/40 hover:text-[#2C1A1D]"}`}
+                style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+              >
+                Select 8 — £{price8.toFixed(2)}
+              </button>
             </div>
           </div>
 
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60">Toppings List</label>
-          <div className="flex flex-wrap gap-3 mb-6">
-            {boxConfig.toppings.map((topping) => (
-              <div key={topping.id} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-[#EBE0D3] border border-[#2C1A1D]/10 group">
-                <Image src={topping.image} alt={topping.name} fill className="object-cover" />
-                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-[10px] font-bold text-white mb-1">{topping.name}</span>
-                  <button type="button" onClick={() => removeTopping(topping.id)} className="bg-white text-red-500 rounded-full px-2 py-1 text-[9px] font-bold">Remove</button>
+          {/* GRID */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-5 md:gap-y-12">
+            {config.toppings.map((topping: any) => {
+              const count = selectedToppings[topping.id] || 0;
+              const isSelected = count > 0;
+              const formattedTitle = topping.name.replace(/\b\w/g, (char: string) => char.toUpperCase());
+              const isFull = totalSelected >= selectedSlots;
+
+              return (
+                <div key={topping.id} className="flex flex-col w-full group">
+                  
+                  {/* IMAGE CARD */}
+                  <div 
+                    onClick={() => handleAddOne(topping.id)}
+                    className={`relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3] cursor-pointer transition-all duration-300 ${!isSelected && isFull ? "opacity-40" : "opacity-100"}`}
+                  >
+                    <Image 
+                      src={topping.image} 
+                      alt={formattedTitle} 
+                      fill 
+                      className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${isSelected ? "scale-105" : ""}`} 
+                    />
+                    
+                    {/* SMALL X TO REMOVE (Only when selected) */}
+                    {isSelected && (
+                      <button 
+                        onClick={(e) => handleRemoveAll(e, topping.id)}
+                        className="absolute top-2 right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[#2C1A1D] hover:bg-white shadow-sm transition-transform hover:scale-110"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
+                      </button>
+                    )}
+
+                    {/* CENTERED NUMBER (Only when selected) */}
+                    {isSelected && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 pointer-events-none">
+                        <div className="bg-white text-[#2C1A1D] h-10 w-10 rounded-full flex items-center justify-center font-bold text-[15px] shadow-md">
+                          {count}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* TITLE & CLICK TO ADD */}
+                  <div className="mt-2.5 text-center flex flex-col items-center">
+                    <h3 className="text-[12px] font-semibold text-[#2C1A1D] truncate w-full" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                      {formattedTitle}
+                    </h3>
+                    
+                    {/* Only shows "Click to add" if NOT selected */}
+                    {!isSelected && (
+                      <p 
+                        className="text-[10px] text-[#2C1A1D]/40 mt-1.5 transition-colors hover:text-[#2C1A1D]"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                      >
+                        Click to add
+                      </p>
+                    )}
+                  </div>
+
                 </div>
-              </div>
-            ))}
-            <div className="flex flex-col gap-2">
-              <input value={newToppingName} onChange={(e) => setNewToppingName(e.target.value)} type="text" placeholder="Topping Name" className="rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-3 py-2 text-[12px] outline-none focus:border-[#2C1A1D]" />
-              <label className="flex h-10 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-[#2C1A1D]/20 bg-white text-[11px] font-bold uppercase text-[#2C1A1D]/50 hover:border-[#2C1A1D] transition-colors">
-                {uploadingTopping ? "..." : "+ Add Image"}
-                <input type="file" accept="image/*" className="hidden" onChange={handleToppingUpload} disabled={uploadingTopping} />
-              </label>
-            </div>
+              );
+            })}
           </div>
-        </div>
 
-        {/* ANNOUNCEMENT BANNER */}
-        <div className="rounded-lg border border-[#2C1A1D]/10 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[14px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Announcement Banner</h2>
-            <button type="button" onClick={() => setBannerActive(!bannerActive)} className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${bannerActive ? "bg-[#2C1A1D]" : "bg-[#2C1A1D]/20"}`}>
-              <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${bannerActive ? "translate-x-[22px]" : "translate-x-0.5"}`} />
+          {/* CHECKOUT */}
+          <div className="mt-16 pt-8 border-t border-[#2C1A1D]/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-col">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                {isComplete ? "Box Complete" : `Selected: ${totalSelected} of ${selectedSlots}`}
+              </p>
+              <p className="text-[20px] font-bold text-[#2C1A1D] mt-1" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+                £{currentPrice.toFixed(2)}
+              </p>
+            </div>
+            
+            <button 
+              onClick={handleAddToCart} 
+              disabled={!isComplete}
+              className={`w-full md:w-[280px] rounded-md py-3.5 text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${
+                isComplete 
+                  ? "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]" 
+                  : "bg-[#EBE0D3] text-[#2C1A1D]/40 cursor-not-allowed"
+              }`} 
+              style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+            >
+              {isComplete ? "Add to Bag" : `Select ${selectedSlots - totalSelected} More`}
             </button>
           </div>
-          <input value={bannerText} onChange={(e) => setBannerText(e.target.value)} type="text" placeholder="Announcement text..." className="w-full rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" />
-        </div>
 
-        {/* DELIVERY ZONES */}
-        <div className="rounded-lg border border-[#2C1A1D]/10 bg-white p-6 shadow-sm">
-          <h2 className="mb-5 text-[14px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Delivery Locations</h2>
-          <div className="flex flex-col gap-3 mb-6">
-            {zones.map((zone, i) => (
-              <div key={i} className="flex items-center justify-between bg-[#FBF9F5] p-3 rounded-md border border-[#2C1A1D]/10">
-                <span className="text-[14px] font-medium text-[#2C1A1D]">{zone.name}</span>
-                <div className="flex items-center gap-4">
-                  <span className="text-[14px] font-bold text-[#2C1A1D]">£{zone.price.toFixed(2)}</span>
-                  <button type="button" onClick={() => removeZone(i)} className="text-red-500 text-sm hover:text-red-700 transition-colors">✕</button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end border-t border-[#2C1A1D]/10 pt-5">
-            <div><label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60">Location</label><input value={newZoneName} onChange={(e) => setNewZoneName(e.target.value)} type="text" placeholder="London" className="w-full rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" /></div>
-            <div><label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60">Price (£)</label><input value={newZonePrice} onChange={(e) => setNewZonePrice(e.target.value)} type="number" step="0.01" placeholder="5.00" className="w-full rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" /></div>
-            <button type="button" onClick={addZone} className="w-full rounded-md bg-[#EBE0D3] py-3 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#DCD0C2]">Add Zone</button>
-          </div>
         </div>
-
-        <div className="flex items-center justify-end gap-4 border-t border-[#2C1A1D]/10 pt-6">
-          {saved && <span className="text-[13px] font-bold text-green-600 animate-pulse" style={{ fontFamily: "var(--font-inter), sans-serif" }}>Settings saved! ✓</span>}
-          <button type="submit" className="rounded-md bg-[#2C1A1D] px-8 py-3.5 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5] transition-all hover:bg-[#1F1315]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Save Settings</button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
