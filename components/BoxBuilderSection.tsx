@@ -73,37 +73,39 @@ export function BoxBuilderSection() {
 
   return (
     <>
-      <section className="w-full bg-[#FBF9F5] py-20 px-6 md:py-28 md:px-12 border-t border-[#2C1A1D]/10">
-        <div className="mx-auto max-w-[1400px] flex flex-col md:flex-row items-center gap-8 md:gap-16">
+      {/* CHOCOLATE BACKGROUND SECTION */}
+      <section className="w-full bg-[#2C1A1D] py-20 px-6 md:py-28 md:px-12">
+        <div className="mx-auto max-w-[1400px] flex flex-col md:flex-row items-center gap-8 md:gap-20">
           
-          {/* MOBILE: Title comes first. DESKTOP: Title is on the right. */}
+          {/* MOBILE: Title first */}
           <div className="w-full md:w-[45%] flex flex-col order-1 md:order-2 text-center md:text-left">
             
-            <h2 className="text-[36px] md:text-[52px] text-[#2C1A1D] leading-[1.05] mb-6 md:mb-6" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+            <h2 className="text-[36px] md:text-[56px] text-[#FBF9F5] leading-[1.05] mb-6" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
               {config.title}
             </h2>
 
-            {/* Mobile Image (Visible only on mobile, right after title) */}
+            {/* Mobile Image */}
             <div className="block md:hidden w-full relative aspect-square overflow-hidden rounded-2xl bg-[#EBE0D3] mb-6">
               <Image src="/box-builder-home.png" alt="Build Your Own Box" fill className="object-cover" />
             </div>
 
-            <p className="text-[15px] md:text-[16px] leading-[1.7] text-[#2C1A1D]/70 mb-8 max-w-md mx-auto md:mx-0" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+            <p className="text-[15px] md:text-[16px] leading-[1.7] text-[#FBF9F5]/70 mb-8 max-w-md mx-auto md:mx-0" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
               Build your perfect box. Choose your favorite treats and customize it exactly how you want, available in boxes of {config.slots} or more.
             </p>
             
+            {/* INVERTED CTA: Cream button with Chocolate text */}
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="w-full max-w-[280px] rounded-md bg-[#2C1A1D] px-8 py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5] transition-all hover:bg-[#1F1315] mx-auto md:mx-0"
+              className="w-full max-w-[280px] rounded-md bg-[#FBF9F5] px-8 py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#EBE0D3] mx-auto md:mx-0"
               style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
             >
               Build Your Box
             </button>
           </div>
 
-          {/* DESKTOP Image (Visible only on desktop) */}
+          {/* DESKTOP Image */}
           <div className="hidden md:block w-[55%] order-2 md:order-1">
-            <div className="relative w-full aspect-[4/5] max-h-[600px] overflow-hidden rounded-2xl bg-[#EBE0D3] shadow-sm">
+            <div className="relative w-full aspect-[4/5] max-h-[600px] overflow-hidden rounded-2xl bg-[#EBE0D3] shadow-2xl">
               <Image src="/box-builder-home.png" alt="Build Your Own Box" fill className="object-cover object-center" />
             </div>
           </div>
