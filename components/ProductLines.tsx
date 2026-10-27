@@ -37,28 +37,23 @@ export function ProductLines() {
           </h2>
         </div>
 
-        {/* Grid Layout: 2 columns on mobile (with 3rd centered), 3 on desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+        {/* Grid Layout: 1 column on mobile, 3 on desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {categories.map((cat, index) => {
-            // Center the 3rd item on mobile
-            const isCentered = index === 2;
-
             return (
               <Link 
                 key={cat.id} 
                 href={cat.link}
-                className={`group relative flex flex-col rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ${
-                  isCentered ? "col-span-2 md:col-span-1 w-1/2 md:w-full mx-auto" : ""
-                }`}
+                className="group relative flex flex-col rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 w-full"
               >
                 
-                {/* Image Container - Much taller and wider */}
-                <div className="relative w-full aspect-[3/4] md:aspect-[4/5] bg-[#EBE0D3] overflow-hidden">
+                {/* Image Container */}
+                <div className="relative w-full aspect-[4/3] md:aspect-[4/5] bg-[#EBE0D3] overflow-hidden">
                   <Image
                     src={cat.image}
                     alt={cat.title}
                     fill
-                    sizes="(max-width: 768px) 50vw, 33vw"
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     priority={index < 2}
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
@@ -67,9 +62,9 @@ export function ProductLines() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
                   
                   {/* Title overlay at the bottom left */}
-                  <div className="absolute bottom-5 left-5 md:bottom-8 md:left-8">
+                  <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8">
                     <h3 
-                      className="text-[24px] text-white md:text-[36px] leading-tight drop-shadow-lg"
+                      className="text-[28px] text-white md:text-[36px] leading-tight drop-shadow-lg"
                       style={{ fontFamily: 'var(--font-dm-serif), serif' }}
                     >
                       {cat.title}
