@@ -1,10 +1,10 @@
+// app/api/products/route.ts
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { products } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-// Tell Next.js to cache the GET request at the edge
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
@@ -25,13 +25,13 @@ export async function POST(request: Request) {
     description: body.description,
     category: body.category,
     image: body.image,
-    sizes: JSON.stringify(body.sizes),
+    images: JSON.stringify(body.images), // MUST STRINGIFY
+    sizes: JSON.stringify(body.sizes),   // MUST STRINGIFY
     inStock: body.inStock ? 1 : 0,
     featured: body.featured ? 1 : 0,
     isBulk: body.isBulk ? 1 : 0,
   });
 
-  // FORCE THE CACHE TO CLEAR INSTANTLY
   revalidatePath("/", "layout");
   revalidatePath("/shop", "layout");
 
@@ -49,7 +49,8 @@ export async function PUT(request: Request) {
       description: body.description,
       category: body.category,
       image: body.image,
-      sizes: JSON.stringify(body.sizes),
+      images: JSON.stringify(body.images), // MUST STRINGIFY
+      sizes: JSON.stringify(body.sizes),   // MUST STRINGIFY
       inStock: body.inStock ? 1 : 0,
       featured: body.featured ? 1 : 0,
       isBulk: body.isBulk ? 1 : 0,
