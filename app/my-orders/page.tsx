@@ -17,7 +17,6 @@ export default function MyOrdersPage() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
-    // 1. Get the specific order IDs saved on THIS phone
     const myOrderIds = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
 
     if (myOrderIds.length === 0) {
@@ -25,22 +24,25 @@ export default function MyOrdersPage() {
       return;
     }
 
-    // 2. Fetch orders from API
     fetch("/api/orders")
       .then(res => res.json())
       .then(data => {
-        // 3. Filter so we ONLY keep orders that are in their saved list
         const myOrders = data.filter((order: any) => myOrderIds.includes(order.id));
         
-        // Sort by date (newest first)
-        myOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        // Normalize the statuses so the 3-step tracker works perfectly
+        const normalizedOrders = myOrders.map((o: any) => {
+          let s = o.status || "Pending";
+          if (s === "Out for Delivery" || s === "Packaged" || s === "In the Oven") s = "Shipping";
+          return { ...o, status: s };
+        });
+
+        normalizedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
-        setOrders(myOrders);
+        setOrders(normalizedOrders);
         setLoading(false);
         
-        // Auto-expand the most recent order
-        if (myOrders.length > 0) {
-          setExpandedOrder(myOrders[0].id);
+        if (normalizedOrders.length > 0) {
+          setExpandedOrder(normalizedOrders[0].id);
         }
       })
       .catch(() => setLoading(false));
@@ -87,11 +89,12 @@ export default function MyOrdersPage() {
   };
 
   const getStepStatus = (orderStatus: string, stepName: string) => {
-    const normalizedStatus = orderStatus ? orderStatus.trim() : "Pending";
-    const steps = ["Pending", "Packaged", "Delivered"];
-    const currentIndex = steps.indexOf(normalizedStatus);
-    const stepIndex = steps.indexOf(stepName);
-    if (stepIndex <= currentIndex) return "active";
+    const statusMap: any = { "Pending": 0, "Shipping": 1, "Delivered": 2 };
+    const currentLevel = statusMap[orderStatus] || 0;
+    const stepLevel = ["Pending", "Shipping", "Delivered"].indexOf(stepName);
+    
+    if (stepLevel < currentLevel) return "completed";
+    if (stepLevel === currentLevel) return "active";
     return "inactive";
   };
 
@@ -144,9 +147,11 @@ export default function MyOrdersPage() {
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                        order.status === "Delivered" ? "bg-green-100 text-green-700" : "bg-[#EBE0D3] text-[#2C1A1D]"
+                        order.status === "Delivered" ? "bg-green-100 text-green-700" :
+                        order.status === "Shipping" ? "bg-blue-100 text-blue-700" :
+                        "bg-[#EBE0D3] text-[#2C1A1D]"
                       }`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                        {order.status || "Pending"}
+                        {order.status}
                       </span>
                       <svg className={`w-5 h-5 text-[#2C1A1D]/40 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -157,19 +162,28 @@ export default function MyOrdersPage() {
                   {isExpanded && (
                     <div className="border-t border-[#2C1A1D]/10 p-6 md:p-8 bg-[#FBF9F5]">
                       
-                      <div className="mb-10">
+                      {/* EXACT 3-STEP TRACKING */}
+                      <div className="mb-10 max-w-md">
                         <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order Status</p>
                         <div className="relative flex justify-between">
-                          <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
-                          {["Pending", "Packaged", "Delivered"].map((step, index) => {
-                            const status = getStepStatus(order.status || "Pending", step);
-                            const isActive = status === "active";
+                          <div className="absolute top-[14px] left-4 right-4 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
+                          
+                          {["Pending", "Shipping", "Delivered"].map((step) => {
+                            const status = getStepStatus(order.status, step);
+                            const isActive = status === "active" || status === "completed";
+                            
                             return (
                               <div key={step} className="relative z-10 flex flex-col items-center gap-2">
-                                <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${isActive ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" : "bg-white border-[#EBE0D3] text-transparent"}`}>
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                <div className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full border-[2px] transition-all duration-300 ${
+                                  isActive ? "bg-[#2C1A1D] border-[#2C1A1D] text-[#FBF9F5]" : "bg-[#FBF9F5] border-[#EBE0D3] text-transparent"
+                                }`}>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5 md:h-4 md:w-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
                                 </div>
-                                <span className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-[#2C1A1D]" : "text-[#2C1A1D]/30"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{step}</span>
+                                <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${isActive ? "text-[#2C1A1D]" : "text-[#2C1A1D]/30"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                                  {step}
+                                </span>
                               </div>
                             );
                           })}
@@ -203,7 +217,6 @@ export default function MyOrdersPage() {
                             <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{order.subtotal?.toLocaleString()}</span></div>
                             <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{order.deliveryFee?.toLocaleString()}</span></div>
                             
-                            {/* DISCOUNT ROW (SCREEN) */}
                             {order.discountAmount > 0 && (
                               <div className="flex justify-between w-full max-w-[200px] text-green-600 font-bold">
                                 <span>Discount {order.promoCode ? `(${order.promoCode})` : ""}:</span>
@@ -301,7 +314,6 @@ export default function MyOrdersPage() {
               <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{pdfOrder.subtotal?.toLocaleString()}</span></div>
               <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{pdfOrder.deliveryFee?.toLocaleString()}</span></div>
               
-              {/* DISCOUNT ROW (PDF) */}
               {pdfOrder.discountAmount > 0 && (
                 <div className="flex justify-between w-full max-w-[300px] text-[14px] text-green-600 font-bold">
                   <span>Discount {pdfOrder.promoCode ? `(${pdfOrder.promoCode})` : ""}:</span>
