@@ -6,7 +6,7 @@ export function ProductLines() {
     {
       id: "banana-bread",
       title: "Banana Bread",
-      image: "/category-banana-bread.PNG", 
+      image: "/category-banana-bread.png", 
       link: "/shop?category=banana-bread"
     },
     {
@@ -24,47 +24,61 @@ export function ProductLines() {
   ];
 
   return (
-    <section id="categories" className="w-full bg-[#FBF9F5] py-16 px-6 md:py-24 md:px-12 lg:px-20">
+    <section id="categories" className="w-full bg-[#FBF9F5] py-20 px-6 md:py-28 md:px-12">
       <div className="mx-auto max-w-[1400px]">
         
-        {/* Grid Layout: 1 column on mobile, 3 on desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 lg:gap-12 items-start">
+          
           {categories.map((cat, index) => {
+            // Push the middle item down on desktop for the staggered look
+            const isMiddle = index === 1;
+            
             return (
               <Link 
                 key={cat.id} 
                 href={cat.link}
-                className="group relative flex flex-col rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 w-full"
+                className={`group flex flex-col w-full ${isMiddle ? "md:mt-16" : ""}`}
               >
                 
-                {/* Image Container */}
-                <div className="relative w-full aspect-[4/3] md:aspect-[4/5] bg-[#EBE0D3] overflow-hidden">
+                {/* IMAGE WRAPPER */}
+                <div className="relative w-full aspect-[4/5] overflow-hidden rounded-xl bg-[#EBE0D3] shadow-sm">
                   <Image
                     src={cat.image}
                     alt={cat.title}
                     fill
                     sizes="(max-width: 768px) 100vw, 33vw"
                     priority={index < 2}
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   />
+                </div>
+
+                {/* TEXT SECTION (Below the image) */}
+                <div className="mt-5 flex flex-col items-center text-center">
+                  <h3 
+                    className="text-[24px] md:text-[32px] text-[#2C1A1D] transition-colors group-hover:text-[#2C1A1D]/70"
+                    style={{ fontFamily: 'var(--font-dm-serif), serif' }}
+                  >
+                    {cat.title}
+                  </h3>
                   
-                  {/* Dark gradient overlay so text is readable */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90" />
-                  
-                  {/* Title overlay at the bottom left */}
-                  <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8">
-                    <h3 
-                      className="text-[28px] text-white md:text-[36px] leading-tight drop-shadow-lg"
-                      style={{ fontFamily: 'var(--font-dm-serif), serif' }}
+                  <div className="mt-3 flex items-center gap-2">
+                    <span 
+                      className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]"
+                      style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
                     >
-                      {cat.title}
-                    </h3>
+                      Shop Now
+                    </span>
+                    <span className="text-[#2C1A1D] transition-transform duration-300 group-hover:translate-x-1">
+                      →
+                    </span>
                   </div>
                 </div>
 
               </Link>
             );
           })}
+
         </div>
 
       </div>
