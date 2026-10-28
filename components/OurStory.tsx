@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export function OurStory() {
   return (
-    <section id="about" className="w-full bg-[#FBF9F5]">
+    <section id="about" className="w-full bg-[#FBF9F5] border-t border-[#2C1A1D]/10">
       
       {/* HEADER SECTION */}
       <div className="mx-auto max-w-[800px] px-6 pt-16 pb-10 md:pt-24 md:pb-12 flex flex-col items-center text-center">
