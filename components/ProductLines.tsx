@@ -12,13 +12,13 @@ export function ProductLines() {
     {
       id: "puff-puffs",
       title: "Puff Puffs",
-      image: "/category-puff-puffs.PNG",
+      image: "/category-puff-puffs.png",
       link: "/shop?category=puff-puffs"
     },
     {
       id: "mocktails",
       title: "Mocktails",
-      image: "/category-mocktails.PNG",
+      image: "/category-mocktails.png",
       link: "/shop?category=mocktails"
     }
   ];
