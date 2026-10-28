@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ProductModal } from "@/components/ProductModal";
 import { ProductCard } from "@/components/ProductCard";
+import { BoxBuilderModal } from "@/components/BoxBuilderModal";
 
 const CATEGORIES = [
   { id: "all", label: "All Treats" },
@@ -12,10 +13,22 @@ const CATEGORIES = [
   { id: "mocktails", label: "Mocktails" },
 ];
 
-// We need to wrap the component using useSearchParams in a Suspense boundary
+// THE HARDCODED MINI BOX PRODUCT
+const MINI_BOX_PRODUCT = {
+  id: "custom-mini-boxes",
+  title: "Build Your Own Mini Boxes",
+  price: "20.00",
+  image: "/box-builder-home.png", // Make sure you have this image
+  category: "banana-bread",
+  inStock: 1,
+  isCustomBox: true, // FLAG TO IDENTIFY IT
+};
+
 function ShopContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [boxConfig, setBoxConfig] = useState<any>(null);
+  const [isBoxModalOpen, setIsBoxModalOpen] = useState(false);
   
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
@@ -24,19 +37,26 @@ function ShopContent() {
   const [isCatOpen, setIsCatOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  // Set the category from the URL if it exists
   useEffect(() => {
-    if (categoryParam) {
-      setActiveCategory(categoryParam);
-    }
+    if (categoryParam) setActiveCategory(categoryParam);
   }, [categoryParam]);
 
   useEffect(() => {
+    // Fetch Box Config
+    fetch("/api/settings").then(res => res.json()).then(data => {
+      if (data && data.boxBuilderConfig) {
+        try {
+          const parsed = JSON.parse(data.boxBuilderConfig);
+          if (parsed.isActive) setBoxConfig(parsed);
+        } catch (e) {}
+      }
+    });
+
+    // Fetch Products
     const cached = localStorage.getItem("mocktopia_products_cache");
     if (cached) {
       try {
-        const parsed = JSON.parse(cached);
-        setProducts(parsed);
+        setProducts(JSON.parse(cached));
         setLoading(false);
       } catch (e) {}
     }
@@ -51,9 +71,14 @@ function ShopContent() {
   }, []);
 
   const filtered = useMemo(() => {
-    if (activeCategory === "all") return products;
-    return products.filter((p) => p.category === activeCategory);
-  }, [products, activeCategory]);
+    let list = activeCategory === "all" ? [...products] : products.filter((p) => p.category === activeCategory);
+    
+    // INJECT MINI BOXES AT THE TOP IF BOX BUILDER IS ACTIVE
+    if (boxConfig && (activeCategory === "all" || activeCategory === "banana-bread")) {
+      list = [MINI_BOX_PRODUCT, ...list];
+    }
+    return list;
+  }, [products, activeCategory, boxConfig]);
 
   const currentCategoryLabel = CATEGORIES.find((c) => c.id === activeCategory)?.label || "All Treats";
 
@@ -91,17 +116,18 @@ function ShopContent() {
         {loading ? (
           <div className="flex justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>
         ) : filtered.length === 0 ? (
-          <div className="py-20 text-center text-[14px] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-            No treats available right now. Check back soon!
-          </div>
+          <div className="py-20 text-center text-[14px] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-inter), sans-serif" }}>No treats available right now.</div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-5 lg:gap-x-5 lg:gap-y-14">
             {filtered.map((product, idx) => (
-              <div key={product.id} className="rounded-xl overflow-hidden group" onClick={() => setSelectedProduct(product)}>
+              <div key={product.id} className="rounded-xl overflow-hidden group" onClick={() => {
+                if (product.isCustomBox) setIsBoxModalOpen(true);
+                else setSelectedProduct(product);
+              }}>
                 <ProductCard 
                   product={{
                     ...product,
-                    sizes: JSON.parse(product.sizes || "[]")
+                    sizes: product.isCustomBox ? [] : JSON.parse(product.sizes || "[]")
                   }} 
                   priority={idx < 4}
                 />
@@ -118,17 +144,16 @@ function ShopContent() {
       </div>
 
       {selectedProduct && (
-        <ProductModal 
-          product={selectedProduct} 
-          onClose={() => setSelectedProduct(null)} 
-          allProducts={products} 
-        />
+        <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} allProducts={products} />
+      )}
+
+      {isBoxModalOpen && boxConfig && (
+        <BoxBuilderModal config={boxConfig} onClose={() => setIsBoxModalOpen(false)} />
       )}
     </div>
   );
 }
 
-// Main export with Suspense boundary required by Next.js for useSearchParams
 export default function ShopPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FBF9F5] flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>}>
