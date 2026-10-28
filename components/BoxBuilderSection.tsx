@@ -1,79 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { BoxBuilderModal } from "./BoxBuilderModal";
-
 export function BoxBuilderSection() {
-  const [config, setConfig] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/settings").then(res => res.json()).then(data => {
-      if (data && data.boxBuilderConfig) {
-        try {
-          const parsed = JSON.parse(data.boxBuilderConfig);
-          if (parsed.isActive && parsed.toppings.length > 0) {
-            setConfig(parsed);
-          }
-        } catch (e) {}
-      }
-    });
-  }, []);
-
-  if (!config) return null;
+  
+  const handleBulkOrder = () => {
+    const message = `Hi Mocktopia! I'd like to request a bulk order for an upcoming event.%0A%0A*Event Type:* %0A*Number of Guests:* %0A*Date Needed:* %0A%0APlease let me know the pricing and availability.`;
+    window.open(`https://wa.me/2348178910628?text=${message}`, '_blank');
+  };
 
   return (
-    <>
-      {/* REDUCED MOBILE PADDING */}
-      <section className="relative w-full py-16 md:py-28 px-6 md:px-12 border-y border-[#2C1A1D]/10 overflow-hidden flex items-center justify-center">
-        
-        {/* BACKGROUND IMAGE */}
-        <div className="absolute inset-0 z-0">
-          <Image 
-            src="/box-builder-home.png" 
-            alt="Build Your Own Box Background" 
-            fill 
-            className="object-cover object-center" 
-          />
-        </div>
-
-        {/* VERY SUBTLE DARK TINT */}
-        <div className="absolute inset-0 z-10 bg-black/10" />
-
-        {/* COMPACT FROSTED GLASS CARD */}
-        <div className="relative z-20 mx-auto max-w-[800px] w-full bg-[#FBF9F5]/85 backdrop-blur-md border border-white/40 shadow-2xl rounded-2xl p-6 md:p-16 flex flex-col items-center text-center">
-          
-          <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/60 mb-3 md:mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            The Custom Experience
-          </p>
-
-          <h2 className="text-[32px] md:text-[56px] text-[#2C1A1D] leading-[1.05] mb-4 md:mb-6" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
-            Your Cravings.<br />Your Box.
-          </h2>
-
-          {/* SHORTENED TEXT FOR MOBILE */}
-          <p className="text-[14px] md:text-[17px] leading-[1.6] text-[#2C1A1D]/80 mb-6 md:mb-10 max-w-lg" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-            Mix and match your favorite treats to create the ultimate box of 6 or 8.
-          </p>
-          
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="w-full max-w-[260px] md:max-w-[280px] rounded-md bg-[#2C1A1D] px-6 py-3.5 md:px-8 md:py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#FBF9F5] transition-all hover:bg-[#1F1315] shadow-lg"
-            style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
-          >
-            Start Building
-          </button>
-        </div>
-
-      </section>
-
-      {isModalOpen && (
-        <BoxBuilderModal 
-          config={config} 
-          onClose={() => setIsModalOpen(false)} 
+    <section className="relative w-full py-24 md:py-32 px-6 md:px-12 border-y border-[#2C1A1D]/10 overflow-hidden flex items-center justify-center bg-[#2C1A1D]">
+      
+      {/* BACKGROUND IMAGE (Using a nice background) */}
+      <div className="absolute inset-0 z-0 opacity-40">
+        <img 
+          src="/box-builder-home.png" 
+          alt="Bulk Orders" 
+          className="w-full h-full object-cover object-center" 
         />
-      )}
-    </>
+      </div>
+
+      {/* CONTENT */}
+      <div className="relative z-20 mx-auto max-w-[800px] flex flex-col items-center text-center">
+        
+        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#FBF9F5]/60 mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+          Catering & Events
+        </p>
+
+        <h2 className="text-[40px] md:text-[64px] text-[#FBF9F5] leading-[1.05] mb-6" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+          Planning an event?<br />Let us bake for you.
+        </h2>
+
+        <p className="text-[15px] md:text-[17px] leading-[1.7] text-[#FBF9F5]/80 mb-10 max-w-lg font-medium" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+          From birthdays to corporate gatherings, we offer bulk orders of our signature treats and mocktails, perfectly packaged for your guests.
+        </p>
+        
+        <button 
+          onClick={handleBulkOrder}
+          className="w-full max-w-[280px] rounded-md bg-[#FBF9F5] px-8 py-4 text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D] transition-all hover:bg-[#EBE0D3] shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
+        >
+          Request Bulk Quote
+        </button>
+      </div>
+
+    </section>
   );
 }
