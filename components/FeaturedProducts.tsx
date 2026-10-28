@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ProductCard } from "./ProductCard";
 
 interface Props {
@@ -13,7 +14,7 @@ const MINI_BOX_PRODUCT = {
   id: "custom-mini-boxes",
   title: "Mini Boxes",
   price: "20",
-  image: "/box-builder-home.PNG",
+  image: "/box-builder-home.PNG", // YOUR CAPITAL PNG
   featured: 1,
   inStock: 1,
   isCustomBox: true,
@@ -76,15 +77,47 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
                 else onProductClick(item);
               }} 
             >
-              <ProductCard 
-                product={{
-                  ...item,
-                  price: `£${item.price.toLocaleString()}`, 
-                  sizes: item.isCustomBox ? [] : JSON.parse(item.sizes || "[]")
-                }} 
-                // PRIORITY LOADING FOR THE FIRST TWO IMAGES
-                priority={idx < 2}
-              />
+              {item.isCustomBox ? (
+                // CUSTOM RENDER FOR MINI BOX TO FORCE FAST LOADING
+                <div className="group flex flex-col cursor-pointer w-full">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3]">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      priority={true}
+                      unoptimized={true} // BYPASSES NEXT.JS SLOW OPTIMIZER
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-col gap-1">
+                    <h3 
+                      className="text-[12px] md:text-[13px] font-semibold truncate leading-[1.3] tracking-[0.01em] text-[#2C1A1D]"
+                      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                    >
+                      {item.title}
+                    </h3>
+                    <div className="flex items-baseline">
+                      <p 
+                        className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                      >
+                        £{item.price}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // NORMAL PRODUCT CARD FOR THE REST
+                <ProductCard 
+                  product={{
+                    ...item,
+                    price: `£${item.price.toLocaleString()}`, 
+                    sizes: JSON.parse(item.sizes || "[]")
+                  }} 
+                  priority={idx < 2}
+                />
+              )}
             </div>
           ))}
         </div>
