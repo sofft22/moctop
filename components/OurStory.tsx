@@ -17,8 +17,8 @@ export function OurStory() {
         <div className="w-12 h-[1px] bg-[#2C1A1D]/20 mt-6" />
       </div>
 
-      {/* FULL BLEED VIDEO (Edge to Edge) */}
-      <div className="relative w-full h-[50vh] md:h-[70vh] bg-[#1F1315] overflow-hidden">
+      {/* FULL BLEED VIDEO (Increased Height) */}
+      <div className="relative w-full h-[60vh] md:h-[80vh] bg-[#1F1315] overflow-hidden">
         <video
           autoPlay
           muted
@@ -28,7 +28,7 @@ export function OurStory() {
         >
           <source src="/hero-video.mp4" type="video/mp4" />
         </video>
-        {/* Optional subtle overlay to make sure it doesn't clash with the text */}
+        {/* Subtle overlay */}
         <div className="absolute inset-0 bg-black/10" />
       </div>
 
