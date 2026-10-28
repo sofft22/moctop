@@ -1,4 +1,6 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
 
 export function OurStory() {
   return (
@@ -15,16 +17,19 @@ export function OurStory() {
         <div className="w-12 h-[1px] bg-[#2C1A1D]/20 mt-6" />
       </div>
 
-      {/* FULL BLEED IMAGE (Edge to Edge) */}
-      <div className="relative w-full h-[50vh] md:h-[70vh] bg-[#EBE0D3]">
-        <Image
-          src="/our-story.png"
-          alt="Mocktopia Story"
-          fill
-          sizes="100vw"
-          className="object-cover object-center"
-          priority
-        />
+      {/* FULL BLEED VIDEO (Edge to Edge) */}
+      <div className="relative w-full h-[50vh] md:h-[70vh] bg-[#1F1315] overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+        </video>
+        {/* Optional subtle overlay to make sure it doesn't clash with the text */}
+        <div className="absolute inset-0 bg-black/10" />
       </div>
 
       {/* TEXT SECTION */}
