@@ -16,8 +16,8 @@ const CATEGORIES = [
 // THE HARDCODED MINI BOX PRODUCT
 const MINI_BOX_PRODUCT = {
   id: "custom-mini-boxes",
-  title: "Build Your Own Mini Boxes",
-  price: "20.00",
+  title: "Mini Boxes",
+  price: "20",
   image: "/box-builder-home.PNG", // Make sure you have this image
   category: "banana-bread",
   inStock: 1,
