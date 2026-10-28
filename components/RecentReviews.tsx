@@ -42,13 +42,13 @@ export function RecentReviews() {
               className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/50 mb-4"
               style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
             >
-              1 Million+ Happy Customers
+          
             </p>
             <h2 
               className="text-[36px] md:text-[56px] text-[#2C1A1D] leading-tight"
               style={{ fontFamily: 'var(--font-dm-serif), serif' }}
             >
-              Loved by you.
+             Most recent reviews
             </h2>
           </div>
 
