@@ -13,21 +13,39 @@ const CATEGORIES = [
   { id: "mocktails", label: "Mocktails" },
 ];
 
-// THE HARDCODED MINI BOX PRODUCT
 const MINI_BOX_PRODUCT = {
   id: "custom-mini-boxes",
   title: "Mini Boxes",
   price: "20",
-  image: "/box-builder-home.PNG", // Make sure you have this image
+  image: "/box-builder-home.PNG", 
   category: "banana-bread",
   inStock: 1,
-  isCustomBox: true, // FLAG TO IDENTIFY IT
+  isCustomBox: true, 
 };
 
 function ShopContent() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [boxConfig, setBoxConfig] = useState<any>(null);
+  // INSTANT CACHE INITIALIZATION
+  const [products, setProducts] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("mocktopia_products_cache");
+      if (cached) {
+        try { return JSON.parse(cached); } catch (e) {}
+      }
+    }
+    return [];
+  });
+  
+  const [boxConfig, setBoxConfig] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("mocktopia_box_cache");
+      if (cached) {
+        try { return JSON.parse(cached); } catch (e) {}
+      }
+    }
+    return null;
+  });
+
+  const [loading, setLoading] = useState(products.length === 0);
   const [isBoxModalOpen, setIsBoxModalOpen] = useState(false);
   
   const searchParams = useSearchParams();
@@ -42,24 +60,18 @@ function ShopContent() {
   }, [categoryParam]);
 
   useEffect(() => {
-    // Fetch Box Config
+    // Background fetch for fresh data
     fetch("/api/settings").then(res => res.json()).then(data => {
       if (data && data.boxBuilderConfig) {
         try {
           const parsed = JSON.parse(data.boxBuilderConfig);
-          if (parsed.isActive) setBoxConfig(parsed);
+          if (parsed.isActive) {
+            setBoxConfig(parsed);
+            localStorage.setItem("mocktopia_box_cache", JSON.stringify(parsed));
+          }
         } catch (e) {}
       }
     });
-
-    // Fetch Products
-    const cached = localStorage.getItem("mocktopia_products_cache");
-    if (cached) {
-      try {
-        setProducts(JSON.parse(cached));
-        setLoading(false);
-      } catch (e) {}
-    }
 
     fetch("/api/products")
       .then(res => res.json())
@@ -73,7 +85,6 @@ function ShopContent() {
   const filtered = useMemo(() => {
     let list = activeCategory === "all" ? [...products] : products.filter((p) => p.category === activeCategory);
     
-    // INJECT MINI BOXES AT THE TOP IF BOX BUILDER IS ACTIVE
     if (boxConfig && (activeCategory === "all" || activeCategory === "banana-bread")) {
       list = [MINI_BOX_PRODUCT, ...list];
     }
@@ -113,7 +124,7 @@ function ShopContent() {
       </section>
 
       <section className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-12 md:px-6 md:py-16">
-        {loading ? (
+        {loading && products.length === 0 ? (
           <div className="flex justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>
         ) : filtered.length === 0 ? (
           <div className="py-20 text-center text-[14px] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-inter), sans-serif" }}>No treats available right now.</div>
