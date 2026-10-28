@@ -127,7 +127,6 @@ export function BoxBuilderModal({ config, onClose }: Props) {
                       onClick={() => handleAddOne(topping.id)}
                       className={`relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3] cursor-pointer transition-all duration-300 ${!isSelected && isFull ? "opacity-40" : "opacity-100"}`}
                     >
-                      {/* OPTIMIZED IMAGE LOADING */}
                       <Image 
                         src={topping.image} 
                         alt={formattedTitle} 
@@ -175,14 +174,14 @@ export function BoxBuilderModal({ config, onClose }: Props) {
           </div>
         </div>
 
-        {/* SLIM STICKY FOOTER */}
-        <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-white px-6 py-4 md:px-10 md:py-5 flex items-center justify-between gap-4">
-          <div className="flex flex-col max-w-[1200px] mx-auto w-full flex-row items-center justify-between">
+        {/* SLIM STICKY FOOTER (FIXED) */}
+        <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-white">
+          <div className="max-w-[1200px] mx-auto px-6 py-4 md:px-10 md:py-4 flex items-center justify-between gap-4">
             <div className="flex flex-col">
-              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                 {isComplete ? "Box Complete" : `${totalSelected} of ${selectedSlots} Selected`}
               </p>
-              <p className="text-[18px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+              <p className="text-[16px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
                 £{currentPrice.toFixed(2)}
               </p>
             </div>
@@ -190,7 +189,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
             <button 
               onClick={handleAddToCart} 
               disabled={!isComplete}
-              className={`rounded-md px-8 py-3 text-[12px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${
+              className={`rounded-md px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${
                 isComplete 
                   ? "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]" 
                   : "bg-[#EBE0D3] text-[#2C1A1D]/40 cursor-not-allowed"
