@@ -37,11 +37,11 @@ export function BoxBuilderSection() {
           />
         </div>
 
-        {/* OVERLAY: Made slightly lighter (75%) */}
-        <div className="absolute inset-0 z-10 bg-[#FBF9F5]/75" />
+        {/* VERY SUBTLE DARK TINT (To make the glass effect pop) */}
+        <div className="absolute inset-0 z-10 bg-black/10" />
 
-        {/* CONTENT */}
-        <div className="relative z-20 mx-auto max-w-[800px] flex flex-col items-center text-center">
+        {/* FROSTED GLASS CARD */}
+        <div className="relative z-20 mx-auto max-w-[800px] w-full bg-[#FBF9F5]/85 backdrop-blur-md border border-white/40 shadow-2xl rounded-2xl p-8 md:p-16 flex flex-col items-center text-center">
           
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/60 mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
             The Custom Experience
@@ -63,6 +63,7 @@ export function BoxBuilderSection() {
             Start Building
           </button>
         </div>
+
       </section>
 
       {isModalOpen && (
