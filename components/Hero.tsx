@@ -35,7 +35,6 @@ export function Hero() {
             muted
             loop
             playsInline
-            // The poster shows instantly while the video buffers
             poster="/hero.png"
             onCanPlay={() => setIsVideoLoaded(true)}
             className={`h-full w-full object-cover object-center transition-opacity duration-1000 ${
@@ -45,11 +44,11 @@ export function Hero() {
             <source src="/hero-video.mp4" type="video/mp4" />
           </video>
 
-          {/* Fallback Image: Stays visible until video is fully loaded */}
+          {/* Fallback Image */}
           {!isVideoLoaded && (
              <div 
                className="absolute inset-0 h-full w-full bg-cover bg-center"
-               style={{ backgroundImage: "url('/hero.PNG')" }}
+               style={{ backgroundImage: "url('/hero.png')" }}
              />
           )}
         </div>
@@ -68,13 +67,8 @@ export function Hero() {
             }}
           >
             {/* Top Line */}
-            <h1 className="text-[56px] leading-[0.9] md:text-[85px]">
-              Sips &
-            </h1>
-            
-            {/* Bottom Line */}
-            <h1 className="text-[56px] leading-[0.9] md:text-[85px] ml-12 md:ml-20">
-            Treats.
+            <h1 className="text-[56px] leading-[0.95] md:text-[85px]">
+              Sips & Treats.
             </h1>
           </div>
 
