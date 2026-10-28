@@ -6,19 +6,19 @@ export function ProductLines() {
     {
       id: "banana-bread",
       title: "Banana Bread",
-      image: "/category-banana-bread.png", 
+      image: "/category-banana-bread.PNG", 
       link: "/shop?category=banana-bread"
     },
     {
       id: "puff-puffs",
       title: "Puff Puffs",
-      image: "/category-puff-puffs.png",
+      image: "/category-puff-puffs.PNG",
       link: "/shop?category=puff-puffs"
     },
     {
       id: "mocktails",
       title: "Mocktails",
-      image: "/category-mocktails.png",
+      image: "/category-mocktails.PNG",
       link: "/shop?category=mocktails"
     }
   ];
@@ -27,6 +27,22 @@ export function ProductLines() {
     <section id="categories" className="w-full bg-[#FBF9F5] py-20 px-6 md:py-28 md:px-12">
       <div className="mx-auto max-w-[1400px]">
         
+        {/* CENTERED HEADER */}
+        <div className="mb-16 flex flex-col items-center text-center">
+          <p 
+            className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/50 mb-4"
+            style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
+          >
+            The Menu
+          </p>
+          <h2 
+            className="text-[36px] md:text-[56px] text-[#2C1A1D] leading-tight"
+            style={{ fontFamily: 'var(--font-dm-serif), serif' }}
+          >
+            What are you craving?
+          </h2>
+        </div>
+
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 lg:gap-12 items-start">
           
@@ -53,7 +69,7 @@ export function ProductLines() {
                   />
                 </div>
 
-                {/* TEXT SECTION (Below the image) */}
+                {/* TEXT SECTION */}
                 <div className="mt-5 flex flex-col items-center text-center">
                   <h3 
                     className="text-[24px] md:text-[32px] text-[#2C1A1D] transition-colors group-hover:text-[#2C1A1D]/70"
