@@ -6,84 +6,81 @@ import { ProductCard } from "./ProductCard";
 
 interface Props {
   onProductClick: (product: any) => void;
+  onBoxClick: () => void; // NEW PROP
 }
 
-export function FeaturedProducts({ onProductClick }: Props) {
+const MINI_BOX_PRODUCT = {
+  id: "custom-mini-boxes",
+  title: "Build Your Own Mini Boxes",
+  price: "20.00",
+  image: "/box-builder-home.png",
+  featured: 1,
+  inStock: 1,
+  isCustomBox: true,
+};
+
+export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
   const [featuredItems, setFeaturedItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Instantly load from localStorage (0ms delay for returning users)
+    // 1. Instantly load from localStorage
     const cached = localStorage.getItem("mocktopia_products_cache");
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        // REMOVED inStock === 1 filter so sold out items show
         const featured = parsed.filter((p: any) => p.featured === 1);
-        setFeaturedItems(featured.slice(0, 6));
+        setFeaturedItems(featured.slice(0, 5)); // Reduced to 5 to make room for mini box
         setLoading(false);
-      } catch (e) {
-        console.error("Failed to parse cache");
-      }
+      } catch (e) {}
     }
 
-    // 2. Fetch fresh data in the background
+    // 2. Fetch fresh data
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        // REMOVED inStock === 1 filter here too
         const featured = data.filter((p: any) => p.featured === 1);
-        setFeaturedItems(featured.slice(0, 6));
+        setFeaturedItems(featured.slice(0, 5));
         setLoading(false);
-        
-        // Save to cache for the next visit
         localStorage.setItem("mocktopia_products_cache", JSON.stringify(data));
       });
   }, []);
 
   if (loading) return null; 
-
   if (featuredItems.length === 0) return null;
+
+  // ADD MINI BOX AS FIRST ITEM
+  const displayItems = [MINI_BOX_PRODUCT, ...featuredItems];
 
   return (
     <section className="w-full bg-[#FBF9F5] py-16 px-4 md:py-24 md:px-6 border-t border-[#2C1A1D]/10">
       <div className="mx-auto max-w-[1400px]">
         
         <div className="mb-8 flex flex-row items-end justify-between">
-          <h2 
-            className="text-[24px] md:text-[48px] font-normal text-[#2C1A1D] whitespace-nowrap"
-            style={{ fontFamily: 'var(--font-dm-serif), serif' }}
-          >
+          <h2 className="text-[24px] md:text-[48px] font-normal text-[#2C1A1D] whitespace-nowrap" style={{ fontFamily: 'var(--font-dm-serif), serif' }}>
             Signature Treats
           </h2>
-          <Link 
-            href="/shop" 
-            className="group flex shrink-0 items-center gap-2 pb-1 text-[10px] md:text-[11px] font-medium uppercase tracking-[0.15em] text-[#2C1A1D] transition-colors hover:opacity-60"
-            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-          >
-            <span className="border-b border-[#2C1A1D] pb-0.5 whitespace-nowrap">
-              See More
-            </span>
-            <span className="transition-transform duration-300 group-hover:translate-x-1">
-              →
-            </span>
+          <Link href="/shop" className="group flex shrink-0 items-center gap-2 pb-1 text-[10px] md:text-[11px] font-medium uppercase tracking-[0.15em] text-[#2C1A1D] transition-colors hover:opacity-60" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+            <span className="border-b border-[#2C1A1D] pb-0.5 whitespace-nowrap">See More</span>
+            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
           </Link>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-5 lg:gap-x-5 lg:gap-y-14">
-          {featuredItems.map((item, idx) => (
+          {displayItems.map((item, idx) => (
             <div 
               key={item.id} 
               className={`${idx >= 4 ? "lg:hidden" : "block"} rounded-xl overflow-hidden group cursor-pointer`} 
-              onClick={() => onProductClick(item)} 
+              onClick={() => {
+                if (item.isCustomBox) onBoxClick();
+                else onProductClick(item);
+              }} 
             >
               <ProductCard 
                 product={{
                   ...item,
-                  // CHANGED TO £ (POUNDS)
                   price: `£${item.price.toLocaleString()}`, 
-                  priceClassName: "font-bold text-[13px] text-[#2C1A1D]/70 font-montserrat",
-                  sizes: JSON.parse(item.sizes || "[]")
+                  sizes: item.isCustomBox ? [] : JSON.parse(item.sizes || "[]")
                 }} 
                 priority={idx < 2}
               />
