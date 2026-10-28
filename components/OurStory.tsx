@@ -18,7 +18,7 @@ export function OurStory() {
       </div>
 
       {/* FULL BLEED VIDEO (Increased Height) */}
-      <div className="relative w-full h-[60vh] md:h-[80vh] bg-[#1F1315] overflow-hidden">
+      <div className="relative w-full h-[70vh] md:h-[90vh] bg-[#1F1315] overflow-hidden">
         <video
           autoPlay
           muted
