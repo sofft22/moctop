@@ -3,7 +3,8 @@ import { HomeClient } from "@/components/HomeClient";
 import { BoxBuilderSection } from "@/components/BoxBuilderSection";
 import { ProductLines } from "@/components/ProductLines";
 import { OurStory } from "@/components/OurStory";
-import { TrustBanner } from "@/components/TrustBanner"; // IMPORTED
+import { RecentReviews } from "@/components/RecentReviews"; // IMPORTED HERE
+import { TrustBanner } from "@/components/TrustBanner";
 import { Footer } from "@/components/Footer";
 
 export default function HomePage() {
@@ -11,12 +12,18 @@ export default function HomePage() {
     <main style={{ margin: 0, padding: 0, width: '100%', overflowX: 'hidden', backgroundColor: '#FBF9F5' }}>
       
       <Hero />
-      <HomeClient />
-      <BoxBuilderSection />
-      <ProductLines /> 
-      <OurStory />
       
-      {/* TRUST BANNER PLACED HERE */}
+      <HomeClient />
+      
+      <BoxBuilderSection />
+      
+      <ProductLines /> 
+      
+      <OurStory />
+
+      {/* RECENT REVIEWS PLACED HERE */}
+      <RecentReviews />
+      
       <TrustBanner />
 
       <Footer />
