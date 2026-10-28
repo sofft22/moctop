@@ -69,13 +69,12 @@ export function BoxBuilderModal({ config, onClose }: Props) {
       
       <div 
         onClick={(e) => e.stopPropagation()} 
-        className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full max-w-[1000px] h-full max-h-[90dvh] sm:max-h-[85vh] rounded-xl overflow-hidden"
+        className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full max-w-[1000px] h-full max-h-[90dvh] sm:max-h-[85vh] rounded-xl overflow-hidden transform-gpu"
       >
         
-        {/* SCROLLABLE CONTENT (Header is now inside here) */}
-        <div className="flex-1 overflow-y-auto scroll-smooth p-6 md:p-10">
+        {/* SCROLLABLE CONTENT (Header scrolls away) */}
+        <div className="flex-1 overflow-y-auto overscroll-auto scroll-smooth p-6 md:p-10">
           
-          {/* HEADER (Scrolls away) */}
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#2C1A1D]/10">
             <span className="uppercase tracking-[0.2em] text-[12px] font-semibold text-[#2C1A1D]" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>
               Mocktopia
@@ -170,13 +169,13 @@ export function BoxBuilderModal({ config, onClose }: Props) {
           </div>
         </div>
 
-        {/* STICKY FOOTER (Pinned to the bottom) */}
-        <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-white p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* SLIM STICKY FOOTER */}
+        <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-white px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-4">
           <div className="flex flex-col">
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-              {isComplete ? "Box Complete" : `Selected: ${totalSelected} of ${selectedSlots}`}
+              {isComplete ? "Complete" : `${totalSelected} of ${selectedSlots}`}
             </p>
-            <p className="text-[20px] font-bold text-[#2C1A1D] mt-1" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+            <p className="text-[16px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
               £{currentPrice.toFixed(2)}
             </p>
           </div>
@@ -184,7 +183,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
           <button 
             onClick={handleAddToCart} 
             disabled={!isComplete}
-            className={`w-full md:w-[280px] rounded-md py-3.5 text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${
+            className={`rounded-md px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${
               isComplete 
                 ? "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]" 
                 : "bg-[#EBE0D3] text-[#2C1A1D]/40 cursor-not-allowed"
