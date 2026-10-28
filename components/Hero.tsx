@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export function Hero() {
@@ -23,21 +24,19 @@ export function Hero() {
         className="hero-section relative flex w-full items-center justify-center overflow-hidden bg-[#1F1315] mt-0 border-none outline-none"
       >
         
-        {/* VIDEO BACKGROUND (Direct Play) */}
+        {/* IMAGE BACKGROUND */}
         <div className="absolute inset-0 z-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="h-full w-full object-cover object-center"
-          >
-            <source src="/hero-video.mp4" type="video/mp4" />
-          </video>
+          <Image
+            src="/hero.PNG"
+            alt="Mocktopia Hero"
+            fill
+            className="object-cover object-center"
+            priority
+          />
         </div>
 
-        {/* DARK OVERLAY (Keeps text readable) */}
-        <div className="absolute inset-0 z-10 bg-black/40" />
+        {/* DARK OVERLAY */}
+        <div className="absolute inset-0 z-10 bg-black/35" />
 
         {/* TEXT AND BUTTON */}
         <div className="absolute bottom-10 left-0 right-0 z-20 flex flex-col items-center px-6 text-center md:bottom-16">
@@ -46,10 +45,9 @@ export function Hero() {
             className="flex flex-col items-center text-white mb-6"
             style={{ 
               fontFamily: 'var(--font-dm-serif), serif',
-              textShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              textShadow: '0 4px 20px rgba(0,0,0,0.15)',
             }}
           >
-            {/* Single Line Text */}
             <h1 className="text-[56px] leading-[0.95] md:text-[85px]">
               Sips & Treats.
             </h1>
