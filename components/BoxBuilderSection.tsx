@@ -25,7 +25,6 @@ export function BoxBuilderSection() {
 
   return (
     <>
-      {/* FULL BLEED SECTION WITH SOFT OVERLAY */}
       <section className="relative w-full py-24 md:py-32 px-6 md:px-12 border-y border-[#2C1A1D]/10 overflow-hidden flex items-center justify-center">
         
         {/* BACKGROUND IMAGE */}
@@ -38,8 +37,8 @@ export function BoxBuilderSection() {
           />
         </div>
 
-        {/* SOFT CREAM OVERLAY FOR LEGIBILITY */}
-        <div className="absolute inset-0 z-10 bg-[#FBF9F5]/85" />
+        {/* OVERLAY: Made slightly lighter (75%) */}
+        <div className="absolute inset-0 z-10 bg-[#FBF9F5]/75" />
 
         {/* CONTENT */}
         <div className="relative z-20 mx-auto max-w-[800px] flex flex-col items-center text-center">
