@@ -10,8 +10,8 @@ export function BoxBuilderSection() {
   return (
     <section className="relative w-full py-24 md:py-32 px-6 md:px-12 border-y border-[#2C1A1D]/10 overflow-hidden flex items-center justify-center bg-[#2C1A1D]">
       
-      {/* BACKGROUND IMAGE (Using a nice background) */}
-      <div className="absolute inset-0 z-0 opacity-40">
+      {/* BACKGROUND IMAGE */}
+      <div className="absolute inset-0 z-0">
         <img 
           src="/box-builder-home.png" 
           alt="Bulk Orders" 
@@ -19,20 +19,15 @@ export function BoxBuilderSection() {
         />
       </div>
 
+      {/* SUBTLE DARK OVERLAY (Makes the text readable) */}
+      <div className="absolute inset-0 z-10 bg-black/50" />
+
       {/* CONTENT */}
       <div className="relative z-20 mx-auto max-w-[800px] flex flex-col items-center text-center">
         
-        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#FBF9F5]/60 mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-          Catering & Events
-        </p>
-
-        <h2 className="text-[40px] md:text-[64px] text-[#FBF9F5] leading-[1.05] mb-6" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
+        <h2 className="text-[40px] md:text-[64px] text-[#FBF9F5] leading-[1.1] mb-10" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
           Planning an event?<br />Let us bake for you.
         </h2>
-
-        <p className="text-[15px] md:text-[17px] leading-[1.7] text-[#FBF9F5]/80 mb-10 max-w-lg font-medium" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-          From birthdays to corporate gatherings, we offer bulk orders of our signature treats and mocktails, perfectly packaged for your guests.
-        </p>
         
         <button 
           onClick={handleBulkOrder}
