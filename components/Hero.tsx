@@ -1,12 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
 
 export function Hero() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-
   return (
     <>
       <style>{`
@@ -24,37 +20,24 @@ export function Hero() {
 
       <section 
         id="hero" 
-        className="hero-section relative flex w-full items-center justify-center overflow-hidden bg-[#2C1A1D] mt-0 border-none outline-none"
+        className="hero-section relative flex w-full items-center justify-center overflow-hidden bg-[#1F1315] mt-0 border-none outline-none"
       >
         
-        {/* VIDEO BACKGROUND */}
+        {/* VIDEO BACKGROUND (Direct Play) */}
         <div className="absolute inset-0 z-0">
           <video
-            ref={videoRef}
             autoPlay
             muted
             loop
             playsInline
-            poster="/hero.png"
-            onCanPlay={() => setIsVideoLoaded(true)}
-            className={`h-full w-full object-cover object-center transition-opacity duration-1000 ${
-              isVideoLoaded ? "opacity-100" : "opacity-0"
-            }`}
+            className="h-full w-full object-cover object-center"
           >
             <source src="/hero-video.mp4" type="video/mp4" />
           </video>
-
-          {/* Fallback Image */}
-          {!isVideoLoaded && (
-             <div 
-               className="absolute inset-0 h-full w-full bg-cover bg-center"
-               style={{ backgroundImage: "url('/hero.png')" }}
-             />
-          )}
         </div>
 
-        {/* DARK OVERLAY */}
-        <div className="absolute inset-0 z-10 bg-black/35" />
+        {/* DARK OVERLAY (Keeps text readable) */}
+        <div className="absolute inset-0 z-10 bg-black/40" />
 
         {/* TEXT AND BUTTON */}
         <div className="absolute bottom-10 left-0 right-0 z-20 flex flex-col items-center px-6 text-center md:bottom-16">
@@ -63,10 +46,10 @@ export function Hero() {
             className="flex flex-col items-center text-white mb-6"
             style={{ 
               fontFamily: 'var(--font-dm-serif), serif',
-              textShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              textShadow: '0 4px 20px rgba(0,0,0,0.3)',
             }}
           >
-            {/* Top Line */}
+            {/* Single Line Text */}
             <h1 className="text-[56px] leading-[0.95] md:text-[85px]">
               Sips & Treats.
             </h1>
