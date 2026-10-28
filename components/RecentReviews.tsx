@@ -42,58 +42,57 @@ export function RecentReviews() {
               className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#2C1A1D]/50 mb-4"
               style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
             >
-              
+              1 Million+ Happy Customers
             </p>
             <h2 
               className="text-[36px] md:text-[56px] text-[#2C1A1D] leading-tight"
               style={{ fontFamily: 'var(--font-dm-serif), serif' }}
             >
-              Most recent reviews
+              Loved by you.
             </h2>
           </div>
 
-          {/* Grid */}
+          {/* Slim, Rectangular Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {reviews.map((review) => {
               const product = products[review.productId];
               return (
                 <div 
                   key={review.id} 
-                  className="flex flex-col justify-between rounded-xl bg-white p-8 border border-[#2C1A1D]/10 shadow-sm"
+                  className="flex flex-col justify-between rounded-xl bg-white px-6 py-5 border border-[#2C1A1D]/10 shadow-sm"
                 >
                   <div>
-                    {/* Stars */}
-                    <div className="mb-6 text-[14px] text-[#2C1A1D]">
-                      {"★".repeat(review.rating)}
-                      <span className="text-[#2C1A1D]/20">{"★".repeat(5 - review.rating)}</span>
+                    {/* Stars & Date */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-[13px] text-[#2C1A1D]">
+                        {"★".repeat(review.rating)}
+                        <span className="text-[#2C1A1D]/20">{"★".repeat(5 - review.rating)}</span>
+                      </div>
+                      <p className="text-[10px] text-[#2C1A1D]/40" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                        {new Date(review.date).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
+                      </p>
                     </div>
 
                     {/* Comment */}
                     <p 
-                      className="text-[15px] leading-[1.7] text-[#2C1A1D]/80 mb-8"
+                      className="text-[14px] leading-[1.6] text-[#2C1A1D]/80 mb-6"
                       style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                     >
                       "{review.comment}"
                     </p>
                   </div>
 
-                  {/* Footer: Name, Date & Product Link */}
-                  <div className="border-t border-[#2C1A1D]/10 pt-5 flex items-start justify-between gap-4">
-                    <div>
+                  {/* Footer: Name & Product Link */}
+                  <div className="border-t border-[#2C1A1D]/5 pt-4 flex items-center justify-between gap-4">
+                    <div className="min-w-0">
                       <p 
-                        className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]"
+                        className="text-[10px] font-bold uppercase tracking-wider text-[#2C1A1D] truncate"
                         style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
                       >
                         {review.customerName}
                       </p>
-                      
-                      {/* ADDED DATE HERE */}
-                      <p className="text-[10px] text-[#2C1A1D]/40 mt-1" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
-                        {new Date(review.date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
-                      </p>
-
                       <p 
-                        className="text-[11px] text-[#2C1A1D]/50 mt-1.5 truncate max-w-[150px]"
+                        className="text-[10px] text-[#2C1A1D]/40 mt-0.5 truncate"
                         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                       >
                         {product.title}
@@ -102,7 +101,7 @@ export function RecentReviews() {
                     
                     <button 
                       onClick={() => setSelectedProduct(product)}
-                      className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D] hover:underline shrink-0 mt-1"
+                      className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D] hover:underline shrink-0"
                       style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
                     >
                       See Product →
