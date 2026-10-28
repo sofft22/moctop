@@ -6,7 +6,7 @@ import { ProductCard } from "./ProductCard";
 
 interface Props {
   onProductClick: (product: any) => void;
-  onBoxClick: () => void; // NEW PROP
+  onBoxClick: () => void; 
 }
 
 const MINI_BOX_PRODUCT = {
@@ -30,12 +30,12 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
       try {
         const parsed = JSON.parse(cached);
         const featured = parsed.filter((p: any) => p.featured === 1);
-        setFeaturedItems(featured.slice(0, 5)); // Reduced to 5 to make room for mini box
+        setFeaturedItems(featured.slice(0, 5)); 
         setLoading(false);
       } catch (e) {}
     }
 
-    // 2. Fetch fresh data
+    // 2. Fetch fresh data in background
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
@@ -82,6 +82,7 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
                   price: `£${item.price.toLocaleString()}`, 
                   sizes: item.isCustomBox ? [] : JSON.parse(item.sizes || "[]")
                 }} 
+                // PRIORITY LOADING FOR THE FIRST TWO IMAGES
                 priority={idx < 2}
               />
             </div>
