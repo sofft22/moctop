@@ -13,7 +13,7 @@ const MINI_BOX_PRODUCT = {
   id: "custom-mini-boxes",
   title: "Build Your Own Mini Boxes",
   price: "20.00",
-  image: "/box-builder-home.png",
+  image: "/box-builder-home.PNG",
   featured: 1,
   inStock: 1,
   isCustomBox: true,
