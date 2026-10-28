@@ -4,6 +4,17 @@ export function OurStory() {
   return (
     <section id="about" className="w-full bg-[#FBF9F5]">
       
+      {/* HEADER SECTION */}
+      <div className="mx-auto max-w-[800px] px-6 pt-16 pb-10 md:pt-24 md:pb-12 flex flex-col items-center text-center">
+        <h2 
+          className="text-[36px] md:text-[56px] text-[#2C1A1D] leading-tight"
+          style={{ fontFamily: 'var(--font-dm-serif), serif' }}
+        >
+          Our Story
+        </h2>
+        <div className="w-12 h-[1px] bg-[#2C1A1D]/20 mt-6" />
+      </div>
+
       {/* FULL BLEED IMAGE (Edge to Edge) */}
       <div className="relative w-full h-[50vh] md:h-[70vh] bg-[#EBE0D3]">
         <Image
@@ -19,15 +30,6 @@ export function OurStory() {
       {/* TEXT SECTION */}
       <div className="mx-auto max-w-[800px] px-6 py-16 md:py-24 flex flex-col items-center text-center">
         
-        <h2 
-          className="mb-8 text-[36px] md:text-[56px] text-[#2C1A1D] leading-tight"
-          style={{ fontFamily: 'var(--font-dm-serif), serif' }}
-        >
-          Our Story
-        </h2>
-
-        <div className="w-12 h-[1px] bg-[#2C1A1D]/20 mb-8" />
-
         <p 
           className="text-[15px] font-semibold leading-[1.6] text-[#2C1A1D] md:text-[18px] mb-8 uppercase tracking-widest"
           style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
