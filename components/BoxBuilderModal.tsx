@@ -72,19 +72,19 @@ export function BoxBuilderModal({ config, onClose }: Props) {
         className="relative flex flex-col bg-[#FBF9F5] shadow-2xl w-full max-w-[1000px] h-full max-h-[90dvh] sm:max-h-[85vh] rounded-xl overflow-hidden"
       >
         
-        {/* HEADER (Fixed at top) */}
-        <div className="flex items-center justify-between px-6 py-5 md:px-10 border-b border-[#2C1A1D]/10 bg-white shrink-0">
-          <span className="uppercase tracking-[0.2em] text-[12px] font-semibold text-[#2C1A1D]" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>
-            Mocktopia
-          </span>
-          <button onClick={onClose} className="text-[#2C1A1D]/40 hover:text-[#2C1A1D] transition-colors p-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
-          </button>
-        </div>
-
-        {/* SCROLLABLE CONTENT */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-6 md:p-10">
+        {/* SCROLLABLE CONTENT (Header is now inside here) */}
+        <div className="flex-1 overflow-y-auto scroll-smooth p-6 md:p-10">
           
+          {/* HEADER (Scrolls away) */}
+          <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#2C1A1D]/10">
+            <span className="uppercase tracking-[0.2em] text-[12px] font-semibold text-[#2C1A1D]" style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}>
+              Mocktopia
+            </span>
+            <button onClick={onClose} className="text-[#2C1A1D]/40 hover:text-[#2C1A1D] transition-colors p-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </div>
+
           <div className="mb-10">
             <h2 className="text-[28px] md:text-[36px] text-[#2C1A1D] mb-2" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
               Build Your Box
@@ -156,7 +156,6 @@ export function BoxBuilderModal({ config, onClose }: Props) {
                       {formattedTitle}
                     </h3>
                     
-                    {/* DYNAMIC TEXT: Changes based on selection */}
                     <p 
                       className={`text-[10px] mt-1.5 transition-colors ${isSelected ? "text-[#2C1A1D]/60 font-medium" : "text-[#2C1A1D]/40 hover:text-[#2C1A1D]"}`}
                       style={{ fontFamily: 'var(--font-inter), sans-serif' }}
@@ -171,7 +170,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
           </div>
         </div>
 
-        {/* STICKY FOOTER */}
+        {/* STICKY FOOTER (Pinned to the bottom) */}
         <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-white p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col">
             <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]/50" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
