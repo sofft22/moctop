@@ -18,7 +18,7 @@ const MINI_BOX_PRODUCT = {
   id: "custom-mini-boxes",
   title: "Build Your Own Mini Boxes",
   price: "20.00",
-  image: "/box-builder-home.png", // Make sure you have this image
+  image: "/box-builder-home.PNG", // Make sure you have this image
   category: "banana-bread",
   inStock: 1,
   isCustomBox: true, // FLAG TO IDENTIFY IT
