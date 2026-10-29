@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const stripe = new Stripe(stripeSecret as string, {
-      apiVersion: "2024-04-10",
+      apiVersion: "2024-06-20",
       httpClient: Stripe.createFetchHttpClient(),
     });
 
