@@ -1,22 +1,20 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST(request: Request) {
   try {
-    const { env } = getCloudflareContext();
-
-    // DEBUG: This will print in your Cloudflare Worker Logs
-    console.log("CLOUDFLARE ENV KEYS:", Object.keys(env));
+    // OpenNext automatically maps Cloudflare vars to process.env
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
     
-    const stripeSecret = (env as any).STRIPE_SECRET_KEY;
+    // Debug log to verify
+    console.log("Key starts with:", stripeSecret?.substring(0, 10));
 
     if (!stripeSecret) {
-      console.error("STRIPE_SECRET_KEY is missing in Cloudflare env");
+      console.error("STRIPE_SECRET_KEY is missing");
       return NextResponse.json({ error: "Stripe configuration error" }, { status: 500 });
     }
 
-    const stripe = new Stripe(stripeSecret as string, {
+    const stripe = new Stripe(stripeSecret, {
       apiVersion: "2024-06-20",
       httpClient: Stripe.createFetchHttpClient(),
     });
@@ -37,7 +35,8 @@ export async function POST(request: Request) {
       quantity: item.qty,
     }));
 
-    const baseUrl = (env as any).NEXT_PUBLIC_BASE_URL || "https://moctop.boluwatifedaniel2009.workers.dev";
+    // Hardcode the base URL to prevent any parsing errors
+    const baseUrl = "https://moctop.boluwatifedaniel2009.workers.dev";
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
