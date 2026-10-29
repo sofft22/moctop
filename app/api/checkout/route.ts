@@ -6,7 +6,9 @@ export async function POST(request: Request) {
   try {
     const { env } = getCloudflareContext();
 
-    // FIX: Cast env as 'any' to bypass strict type checking
+    // DEBUG: This will print in your Cloudflare Worker Logs
+    console.log("CLOUDFLARE ENV KEYS:", Object.keys(env));
+    
     const stripeSecret = (env as any).STRIPE_SECRET_KEY;
 
     if (!stripeSecret) {
@@ -35,7 +37,6 @@ export async function POST(request: Request) {
       quantity: item.qty,
     }));
 
-    // Also cast env for the base URL
     const baseUrl = (env as any).NEXT_PUBLIC_BASE_URL || "https://moctop.boluwatifedaniel2009.workers.dev";
 
     const session = await stripe.checkout.sessions.create({
