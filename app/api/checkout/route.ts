@@ -3,10 +3,10 @@ import Stripe from "stripe";
 
 export async function POST(request: Request) {
   try {
-    // 1. Initialize Stripe INSIDE the function, not at the top of the file
+    // 1. Initialize Stripe INSIDE the function
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
       apiVersion: "2024-04-10",
-      // 2. This is REQUIRED for Cloudflare Workers
+      // 2. THIS LINE IS CRITICAL FOR CLOUDFLARE WORKERS
       httpClient: Stripe.createFetchHttpClient(),
     });
 
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
           images: [item.image],
           description: `Size: ${item.size}`,
         },
-        unit_amount: Math.round(item.price * 100), // Amount in pence
+        unit_amount: Math.round(item.price * 100),
       },
       quantity: item.qty,
     }));
