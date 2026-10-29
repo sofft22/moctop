@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST(request: Request) {
   try {
-    // 1. Initialize Stripe INSIDE the function
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+    // 1. Get the Cloudflare environment context
+    const { env } = getCloudflareContext();
+
+    // 2. Access the secret key from the Cloudflare env object
+    const stripeSecret = env.STRIPE_SECRET_KEY;
+
+    if (!stripeSecret) {
+      console.error("STRIPE_SECRET_KEY is missing in Cloudflare env");
+      return NextResponse.json({ error: "Stripe configuration error" }, { status: 500 });
+    }
+
+    // 3. Initialize Stripe with the key from Cloudflare env
+    const stripe = new Stripe(stripeSecret as string, {
       apiVersion: "2024-04-10",
-      // 2. THIS LINE IS CRITICAL FOR CLOUDFLARE WORKERS
-      httpClient: Stripe.createFetchHttpClient(),
+      httpClient: Stripe.createFetchHttpClient(), // Still required for Cloudflare
     });
 
     const body = await request.json();
@@ -26,12 +37,15 @@ export async function POST(request: Request) {
       quantity: item.qty,
     }));
 
+    // 4. Get the base URL from Cloudflare env as well
+    const baseUrl = env.NEXT_PUBLIC_BASE_URL || "https://moctop.boluwatife..."; 
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/order/${orderId}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
+      success_url: `${baseUrl}/order/${orderId}`,
+      cancel_url: `${baseUrl}/checkout`,
       customer_email: customerDetails.email,
       metadata: {
         orderId: orderId,
