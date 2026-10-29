@@ -19,4 +19,8 @@ const nextConfig = {
   },
 };
 
+// Initialize Cloudflare environment context for local dev
+const { initOpenNextCloudflareForDev } = require("@opennextjs/cloudflare");
+initOpenNextCloudflareForDev();
+
 module.exports = nextConfig;
