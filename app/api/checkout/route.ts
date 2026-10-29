@@ -3,14 +3,15 @@ import Stripe from "stripe";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { items, customerDetails, orderId } = body;
-
-    // Initialize Stripe inside the request so it reads the Cloudflare Env Variable correctly
+    // 1. Initialize Stripe INSIDE the function, not at the top of the file
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
       apiVersion: "2024-04-10",
-      httpClient: Stripe.createFetchHttpClient(), // REQUIRED FOR CLOUDFLARE
+      // 2. This is REQUIRED for Cloudflare Workers
+      httpClient: Stripe.createFetchHttpClient(),
     });
+
+    const body = await request.json();
+    const { items, customerDetails, orderId } = body;
 
     const lineItems = items.map((item: any) => ({
       price_data: {
