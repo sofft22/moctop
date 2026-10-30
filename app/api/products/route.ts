@@ -1,17 +1,35 @@
-// app/api/products/route.ts
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { products } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+// Tell Next.js to cache the GET request at the edge
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
 export async function GET() {
   const db = getDb();
-  const allProducts = await db.select().from(products);
-  return NextResponse.json(allProducts);
+  
+  // Optimized Select: Only fetch what the grid needs
+  const allProducts = await db.select({
+    id: products.id,
+    title: products.title,
+    price: products.price,
+    category: products.category,
+    image: products.image,
+    inStock: products.inStock,
+    sizes: products.sizes,
+    featured: products.featured,
+    isBulk: products.isBulk,
+  }).from(products);
+
+  // Return with Cache-Control headers to make it load instantly
+  return NextResponse.json(allProducts, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+    },
+  });
 }
 
 export async function POST(request: Request) {
@@ -25,8 +43,8 @@ export async function POST(request: Request) {
     description: body.description,
     category: body.category,
     image: body.image,
-    images: JSON.stringify(body.images), // MUST STRINGIFY
-    sizes: JSON.stringify(body.sizes),   // MUST STRINGIFY
+    images: JSON.stringify(body.images),
+    sizes: JSON.stringify(body.sizes),
     inStock: body.inStock ? 1 : 0,
     featured: body.featured ? 1 : 0,
     isBulk: body.isBulk ? 1 : 0,
@@ -49,8 +67,8 @@ export async function PUT(request: Request) {
       description: body.description,
       category: body.category,
       image: body.image,
-      images: JSON.stringify(body.images), // MUST STRINGIFY
-      sizes: JSON.stringify(body.sizes),   // MUST STRINGIFY
+      images: JSON.stringify(body.images),
+      sizes: JSON.stringify(body.sizes),
       inStock: body.inStock ? 1 : 0,
       featured: body.featured ? 1 : 0,
       isBulk: body.isBulk ? 1 : 0,
