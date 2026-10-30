@@ -3,15 +3,11 @@ import Stripe from "stripe";
 
 export async function POST(request: Request) {
   try {
-    // 1. Read the key but force it to be a plain string to bypass Cloudflare's URL parser
-    const rawKey = process.env.STRIPE_API_KEY;
-    
-    if (!rawKey) {
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+
+    if (!stripeSecret) {
       return NextResponse.json({ error: "Key missing" }, { status: 500 });
     }
-
-    // 2. Strip out any hidden characters Cloudflare might have added
-    const stripeSecret = String(rawKey).replace(/[^\x20-\x7E]/g, '').trim();
 
     const stripe = new Stripe(stripeSecret, {
       apiVersion: "2024-06-20",
@@ -21,18 +17,20 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { items, customerDetails, orderId } = body;
 
-    const lineItems = items.map((item: any) => ({
-      price_data: {
-        currency: "gbp",
-        product_data: {
-          name: item.title || "Mocktopia Treat",
-          images: [item.image || "https://moctop.boluwatifedaniel2009.workers.dev/hero.PNG"],
-          description: item.size ? `Size: ${item.size}` : undefined,
+    const lineItems = items.map((item: any) => {
+      // Completely remove images from the Stripe payload
+      return {
+        price_data: {
+          currency: "gbp",
+          product_data: {
+            name: item.title || "Mocktopia Treat",
+            description: item.size ? `Size: ${item.size}` : undefined,
+          },
+          unit_amount: Math.round(item.price * 100),
         },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.qty || 1,
-    }));
+        quantity: item.qty || 1,
+      };
+    });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
