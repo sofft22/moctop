@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useCart } from "@/app/CartContext";
-import Link from "next/link";
 import Image from "next/image";
 
 export default function CheckoutPage() {
@@ -54,7 +53,6 @@ export default function CheckoutPage() {
 
   const shipping = selectedZone ? selectedZone.price : 0;
   
-  // Calculate Discount
   let discountAmount = 0;
   if (appliedPromo) {
     if (appliedPromo.type === "percentage") {
@@ -65,7 +63,6 @@ export default function CheckoutPage() {
   }
 
   const total = Math.max(0, cartTotal + shipping - discountAmount);
-  
   const canSubmit = Boolean(firstName.trim() && lastName.trim() && phone.trim() && address.trim() && city.trim() && selectedZone);
 
   const handleApplyPromo = async () => {
@@ -110,8 +107,23 @@ export default function CheckoutPage() {
       image: item.image
     }));
 
+    // SAVE FULL DATA TO LOCAL STORAGE FOR THE SUCCESS PAGE
+    localStorage.setItem(`pending_order_${orderId}`, JSON.stringify({
+      orderId,
+      customerName: `${firstName} ${lastName}`,
+      phone,
+      address: `${address}, ${city}`,
+      city,
+      items,
+      subtotal: cartTotal,
+      deliveryFee: shipping,
+      discountAmount: discountAmount,
+      promoCode: appliedPromo ? appliedPromo.code : null,
+      total,
+      paymentMethod: "Stripe",
+    }));
+
     try {
-      // 1. Create Stripe Session (Do NOT save to DB yet)
       const stripeRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,33 +134,20 @@ export default function CheckoutPage() {
             customerName: `${firstName} ${lastName}`, 
             phone 
           },
-          orderId: orderId,
-          orderData: {
-            customerName: `${firstName} ${lastName}`,
-            phone,
-            address: `${address}, ${city}`,
-            city,
-            items,
-            subtotal: cartTotal,
-            deliveryFee: shipping,
-            discountAmount: discountAmount,
-            promoCode: appliedPromo ? appliedPromo.code : null,
-            total,
-          }
+          orderId: orderId
         }),
       });
 
       const stripeData = await stripeRes.json();
 
       if (stripeData.url) {
-        // 2. Save Order ID to local storage for "My Orders" page tracking
+        // Save Order ID to Local Storage for My Orders page
         const savedOrders = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
         if (!savedOrders.includes(orderId)) {
           savedOrders.push(orderId);
           localStorage.setItem("mocktopia_my_orders", JSON.stringify(savedOrders));
         }
         
-        // 3. Clear Cart & Redirect to Stripe
         clearCart();
         window.location.href = stripeData.url; 
       } else {
@@ -193,7 +192,6 @@ export default function CheckoutPage() {
             })}
           </div>
           
-          {/* PROMO CODE SECTION */}
           <div className="mb-4">
             <div className="flex gap-2">
               <input 
