@@ -3,18 +3,17 @@ import Stripe from "stripe";
 
 export async function POST(request: Request) {
   try {
-    // We use the new variable name here
-    const stripeSecret = process.env.STRIPE_API_KEY;
-
-    if (!stripeSecret) {
-      console.error("STRIPE_API_KEY is missing");
-      return NextResponse.json({ error: "Stripe configuration error" }, { status: 500 });
+    // 1. Read the key but force it to be a plain string to bypass Cloudflare's URL parser
+    const rawKey = process.env.STRIPE_API_KEY;
+    
+    if (!rawKey) {
+      return NextResponse.json({ error: "Key missing" }, { status: 500 });
     }
 
-    // Ensure no weird characters or spaces
-    const cleanStripeKey = stripeSecret.trim();
+    // 2. Strip out any hidden characters Cloudflare might have added
+    const stripeSecret = String(rawKey).replace(/[^\x20-\x7E]/g, '').trim();
 
-    const stripe = new Stripe(cleanStripeKey, {
+    const stripe = new Stripe(stripeSecret, {
       apiVersion: "2024-06-20",
       httpClient: Stripe.createFetchHttpClient(),
     });
@@ -22,34 +21,25 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { items, customerDetails, orderId } = body;
 
-    const lineItems = items.map((item: any) => {
-      const productName = item.title && item.title.trim() !== "" ? item.title : "Mocktopia Treat";
-      const productImages = (item.image && item.image.trim() !== "") 
-        ? [item.image] 
-        : ["https://moctop.boluwatifedaniel2009.workers.dev/hero.PNG"];
-
-      return {
-        price_data: {
-          currency: "gbp",
-          product_data: {
-            name: productName,
-            images: productImages,
-            description: item.size ? `Size: ${item.size}` : undefined,
-          },
-          unit_amount: Math.round(item.price * 100),
+    const lineItems = items.map((item: any) => ({
+      price_data: {
+        currency: "gbp",
+        product_data: {
+          name: item.title || "Mocktopia Treat",
+          images: [item.image || "https://moctop.boluwatifedaniel2009.workers.dev/hero.PNG"],
+          description: item.size ? `Size: ${item.size}` : undefined,
         },
-        quantity: item.qty || 1,
-      };
-    });
-
-    const baseUrl = "https://moctop.boluwatifedaniel2009.workers.dev";
+        unit_amount: Math.round(item.price * 100),
+      },
+      quantity: item.qty || 1,
+    }));
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${baseUrl}/order/${orderId}`,
-      cancel_url: `${baseUrl}/checkout`,
+      success_url: "https://moctop.boluwatifedaniel2009.workers.dev/order/" + orderId,
+      cancel_url: "https://moctop.boluwatifedaniel2009.workers.dev/checkout",
       customer_email: customerDetails.email,
       metadata: {
         orderId: orderId,
@@ -60,7 +50,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error("Stripe Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
