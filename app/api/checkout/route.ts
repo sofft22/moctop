@@ -3,14 +3,18 @@ import Stripe from "stripe";
 
 export async function POST(request: Request) {
   try {
-    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    // We use the new variable name here
+    const stripeSecret = process.env.STRIPE_API_KEY;
 
     if (!stripeSecret) {
-      console.error("STRIPE_SECRET_KEY is missing");
+      console.error("STRIPE_API_KEY is missing");
       return NextResponse.json({ error: "Stripe configuration error" }, { status: 500 });
     }
 
-    const stripe = new Stripe(stripeSecret, {
+    // Ensure no weird characters or spaces
+    const cleanStripeKey = stripeSecret.trim();
+
+    const stripe = new Stripe(cleanStripeKey, {
       apiVersion: "2024-06-20",
       httpClient: Stripe.createFetchHttpClient(),
     });
@@ -18,12 +22,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { items, customerDetails, orderId } = body;
 
-    // CLEAN THE ITEMS TO PREVENT STRIPE FROM CRASHING
     const lineItems = items.map((item: any) => {
-      // Ensure the name is never empty
       const productName = item.title && item.title.trim() !== "" ? item.title : "Mocktopia Treat";
-      
-      // Ensure the image array is valid. If empty, use your hero image as a fallback.
       const productImages = (item.image && item.image.trim() !== "") 
         ? [item.image] 
         : ["https://moctop.boluwatifedaniel2009.workers.dev/hero.PNG"];
