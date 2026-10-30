@@ -3,11 +3,7 @@ import Stripe from "stripe";
 
 export async function POST(request: Request) {
   try {
-    // OpenNext automatically maps Cloudflare vars to process.env
     const stripeSecret = process.env.STRIPE_SECRET_KEY;
-    
-    // Debug log to verify
-    console.log("Key starts with:", stripeSecret?.substring(0, 10));
 
     if (!stripeSecret) {
       console.error("STRIPE_SECRET_KEY is missing");
@@ -22,20 +18,30 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { items, customerDetails, orderId } = body;
 
-    const lineItems = items.map((item: any) => ({
-      price_data: {
-        currency: "gbp",
-        product_data: {
-          name: item.title,
-          images: [item.image],
-          description: `Size: ${item.size}`,
-        },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.qty,
-    }));
+    // CLEAN THE ITEMS TO PREVENT STRIPE FROM CRASHING
+    const lineItems = items.map((item: any) => {
+      // Ensure the name is never empty
+      const productName = item.title && item.title.trim() !== "" ? item.title : "Mocktopia Treat";
+      
+      // Ensure the image array is valid. If empty, use your hero image as a fallback.
+      const productImages = (item.image && item.image.trim() !== "") 
+        ? [item.image] 
+        : ["https://moctop.boluwatifedaniel2009.workers.dev/hero.PNG"];
 
-    // Hardcode the base URL to prevent any parsing errors
+      return {
+        price_data: {
+          currency: "gbp",
+          product_data: {
+            name: productName,
+            images: productImages,
+            description: item.size ? `Size: ${item.size}` : undefined,
+          },
+          unit_amount: Math.round(item.price * 100),
+        },
+        quantity: item.qty || 1,
+      };
+    });
+
     const baseUrl = "https://moctop.boluwatifedaniel2009.workers.dev";
 
     const session = await stripe.checkout.sessions.create({
