@@ -1,31 +1,18 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST(request: Request) {
   try {
-    // 1. Get the Cloudflare environment context
-    const { env } = getCloudflareContext();
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecret) return NextResponse.json({ error: "Key missing" }, { status: 500 });
 
-    // 2. Read the key from the environment
-    const stripeSecret = (env as any).STRIPE_SECRET_KEY;
-
-    // 3. If it's missing, log it and return the error
-    if (!stripeSecret) {
-      console.log("CLOUDFLARE DID NOT PASS THE KEY");
-      return NextResponse.json({ error: "Key missing" }, { status: 500 });
-    }
-
-    // 4. Ensure it's a clean string (removes any accidental spaces)
-    const cleanKey = String(stripeSecret).trim();
-
-    const stripe = new Stripe(cleanKey, {
+    const stripe = new Stripe(stripeSecret, {
       apiVersion: "2024-06-20",
       httpClient: Stripe.createFetchHttpClient(),
     });
 
     const body = await request.json();
-    const { items, customerDetails, orderId } = body;
+    const { items, customerDetails, orderId, orderData } = body;
 
     const lineItems = items.map((item: any) => ({
       price_data: {
@@ -43,19 +30,27 @@ export async function POST(request: Request) {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "https://moctop.boluwatifedaniel2009.workers.dev/order/" + orderId,
+      success_url: "https://moctop.boluwatifedaniel2009.workers.dev/success?order_id=" + orderId,
       cancel_url: "https://moctop.boluwatifedaniel2009.workers.dev/checkout",
       customer_email: customerDetails.email,
+      // WE PASS EVERYTHING TO STRIPE METADATA HERE
       metadata: {
         orderId: orderId,
-        customerName: customerDetails.customerName,
-        phone: customerDetails.phone,
+        customerName: orderData.customerName,
+        phone: orderData.phone,
+        address: orderData.address,
+        city: orderData.city,
+        items: JSON.stringify(orderData.items),
+        subtotal: orderData.subtotal.toString(),
+        deliveryFee: orderData.deliveryFee.toString(),
+        discountAmount: orderData.discountAmount.toString(),
+        promoCode: orderData.promoCode || "",
+        total: orderData.total.toString(),
       },
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error("Stripe Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
