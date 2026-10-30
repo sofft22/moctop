@@ -110,35 +110,8 @@ export default function CheckoutPage() {
       image: item.image
     }));
 
-    // 1. Save Order to Database First (Status: Pending)
-    await fetch("/api/orders", {
-      method: "POST",
-      body: JSON.stringify({
-        orderId,
-        customerName: `${firstName} ${lastName}`,
-        phone,
-        address: `${address}, ${city}`,
-        city,
-        items,
-        subtotal: cartTotal,
-        deliveryFee: shipping,
-        discountAmount: discountAmount,
-        promoCode: appliedPromo ? appliedPromo.code : null,
-        total,
-        paymentMethod: "Stripe", 
-        deliveryZone: selectedZone.name,
-      }),
-    });
-
-    // 2. Save to LocalStorage for "My Orders" page
-    const savedOrders = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
-    if (!savedOrders.includes(orderId)) {
-      savedOrders.push(orderId);
-      localStorage.setItem("mocktopia_my_orders", JSON.stringify(savedOrders));
-    }
-
-    // 3. Create Stripe Checkout Session & Redirect
     try {
+      // 1. Create Stripe Session (Do NOT save to DB yet)
       const stripeRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -150,17 +123,36 @@ export default function CheckoutPage() {
             phone 
           },
           orderId: orderId,
+          orderData: {
+            customerName: `${firstName} ${lastName}`,
+            phone,
+            address: `${address}, ${city}`,
+            city,
+            items,
+            subtotal: cartTotal,
+            deliveryFee: shipping,
+            discountAmount: discountAmount,
+            promoCode: appliedPromo ? appliedPromo.code : null,
+            total,
+          }
         }),
       });
 
       const stripeData = await stripeRes.json();
 
       if (stripeData.url) {
-        // Clear cart before redirecting
+        // 2. Save Order ID to local storage for "My Orders" page tracking
+        const savedOrders = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
+        if (!savedOrders.includes(orderId)) {
+          savedOrders.push(orderId);
+          localStorage.setItem("mocktopia_my_orders", JSON.stringify(savedOrders));
+        }
+        
+        // 3. Clear Cart & Redirect to Stripe
         clearCart();
-        window.location.href = stripeData.url;
+        window.location.href = stripeData.url; 
       } else {
-        alert("Payment setup failed. Please try again.");
+        alert(`Payment setup failed: ${stripeData.error || "Unknown error"}`);
         setIsSubmitting(false);
       }
     } catch (error) {
