@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST(request: Request) {
   try {
-    const stripeSecret = process.env.STRIPE_SECRET_KEY;
-    if (!stripeSecret) return NextResponse.json({ error: "Key missing" }, { status: 500 });
+    const { env } = getCloudflareContext();
+
+    // Read the key from the Cloudflare environment
+    const stripeSecret = (env as any).STRIPE_SECRET_KEY;
+
+    if (!stripeSecret) {
+      // IF IT FAILS, WE RETURN THE ACTUAL CLOUDFLARE ERROR TO THE SCREEN
+      console.log("ENV KEYS AVAILABLE:", Object.keys(env));
+      return NextResponse.json({ 
+        error: "Key missing. Check Cloudflare variables.",
+        availableKeys: Object.keys(env) 
+      }, { status: 500 });
+    }
 
     const stripe = new Stripe(stripeSecret, {
       apiVersion: "2024-06-20",
@@ -33,7 +45,6 @@ export async function POST(request: Request) {
       success_url: "https://moctop.boluwatifedaniel2009.workers.dev/success?order_id=" + orderId,
       cancel_url: "https://moctop.boluwatifedaniel2009.workers.dev/checkout",
       customer_email: customerDetails.email,
-      // WE PASS EVERYTHING TO STRIPE METADATA HERE
       metadata: {
         orderId: orderId,
         customerName: orderData.customerName,
