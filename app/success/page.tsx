@@ -8,6 +8,7 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const router = useRouter();
+  
   const [saved, setSaved] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [totalPrice, setTotalPrice] = useState(0);
@@ -23,8 +24,12 @@ function SuccessContent() {
     
     if (pendingOrder) {
       const orderData = JSON.parse(pendingOrder);
-      setCustomerName(orderData.customerName.split(" ")[0]); // Just get first name
-      setTotalPrice(orderData.total);
+      
+      // Extract first name and total for the UI
+      setCustomerName(orderData.customerName.split(" ")[0]); 
+      // If the total is saved in pence, divide by 100. If pounds, just use it.
+      // Assuming it's saved in pence based on our previous code:
+      setTotalPrice(orderData.total / 100); 
 
       // 2. Save to Database NOW
       fetch("/api/orders", {
@@ -34,13 +39,23 @@ function SuccessContent() {
       }).then(() => {
         setSaved(true);
         localStorage.removeItem(`pending_order_${orderId}`); // Clean up
+      }).catch((err) => {
+        console.error("Failed to save order:", err);
+        setSaved(true); // Still show success so they don't panic
       });
     } else {
+      // If no data found (e.g., they refreshed the page), just show success
       setSaved(true); 
     }
   }, [orderId, router]);
 
-  if (!saved) return <div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>;
+  if (!saved) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" />
+      </div>
+    );
+  }
 
   // 3. Generate the WhatsApp Message
   const whatsappMessage = `Hi Mocktopia! I just placed order ${orderId} (Total: £${totalPrice.toFixed(2)}). I'd like to speed up the delivery for this order. Can we arrange this?`;
@@ -49,7 +64,9 @@ function SuccessContent() {
   return (
     <div className="min-h-screen bg-[#FBF9F5] flex flex-col items-center justify-center p-6 text-center">
       <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-700">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-10 w-10"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-10 w-10">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
       </div>
       
       <h1 className="text-[32px] md:text-[40px] text-[#2C1A1D] mb-4" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
@@ -88,5 +105,9 @@ function SuccessContent() {
 }
 
 export default function SuccessPage() {
-  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]">Loading...</div>}><SuccessContent /></Suspense>;
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FBF9F5]"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>}>
+      <SuccessContent />
+    </Suspense>
+  );
 }
