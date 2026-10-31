@@ -10,7 +10,6 @@ export default function CheckoutPage() {
   const [settings, setSettings] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Form State
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -19,11 +18,9 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [saveDetails, setSaveDetails] = useState(false);
 
-  // Delivery State
   const [selectedZone, setSelectedZone] = useState<any>(null);
   const [zones, setZones] = useState<any[]>([]);
 
-  // Promo State
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [promoError, setPromoError] = useState("");
@@ -134,14 +131,14 @@ export default function CheckoutPage() {
             customerName: `${firstName} ${lastName}`, 
             phone 
           },
-          orderId: orderId
+          orderId: orderId,
+          total: total, // <--- SENDING TOTAL DIRECTLY (NOT IN AN OBJECT)
         }),
       });
 
       const stripeData = await stripeRes.json();
 
       if (stripeData.url) {
-        // Save Order ID to Local Storage for My Orders page
         const savedOrders = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
         if (!savedOrders.includes(orderId)) {
           savedOrders.push(orderId);
@@ -194,16 +191,8 @@ export default function CheckoutPage() {
           
           <div className="mb-4">
             <div className="flex gap-2">
-              <input 
-                value={promoCode} 
-                onChange={(e) => setPromoCode(e.target.value.toUpperCase())} 
-                type="text" 
-                placeholder="Promo Code" 
-                className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" 
-              />
-              <button onClick={handleApplyPromo} disabled={checkingPromo || !promoCode} className="rounded-md bg-[#EBE0D3] px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#DCD0C2] disabled:opacity-50 transition-colors">
-                Apply
-              </button>
+              <input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} type="text" placeholder="Promo Code" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" />
+              <button onClick={handleApplyPromo} disabled={checkingPromo || !promoCode} className="rounded-md bg-[#EBE0D3] px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#DCD0C2] disabled:opacity-50 transition-colors">Apply</button>
             </div>
             {promoError && <p className="text-red-500 text-[11px] mt-1 font-bold">{promoError}</p>}
             {appliedPromo && <p className="text-green-600 text-[11px] mt-1 font-bold">Code {appliedPromo.code} applied!</p>}
