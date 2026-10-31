@@ -15,19 +15,24 @@ export async function POST(request: Request) {
     });
 
     const body = await request.json();
-    const { items, customerDetails, orderId } = body;
+    const { customerDetails, orderId, orderData } = body;
 
-    const lineItems = items.map((item: any) => ({
-      price_data: {
-        currency: "gbp",
-        product_data: {
-          name: item.title || "Mocktopia Treat",
-          description: item.size ? `Size: ${item.size}` : undefined,
+    // STRIPE WILL NOW CHARGE EXACTLY THE TOTAL FROM YOUR WEBSITE
+    const finalAmountInPence = Math.round(orderData.total * 100);
+
+    const lineItems = [
+      {
+        price_data: {
+          currency: "gbp",
+          product_data: {
+            name: "Mocktopia Order Total",
+            description: `Order ID: ${orderId} (Includes delivery & discounts)`,
+          },
+          unit_amount: finalAmountInPence, // e.g., 350 for £3.50
         },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.qty || 1,
-    }));
+        quantity: 1,
+      }
+    ];
 
     const baseUrl = "https://moctop.boluwatifedaniel2009.workers.dev";
 
