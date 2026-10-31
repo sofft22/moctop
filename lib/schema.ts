@@ -25,8 +25,9 @@ export const orders = sqliteTable("orders", {
   items: text("items").notNull(),
   subtotal: integer("subtotal").notNull(),
   deliveryFee: integer("deliveryFee").notNull(),
-  discountAmount: integer("discountAmount").default(0), // NEW
-  promoCode: text("promoCode"),                        // NEW
+  discountAmount: integer("discountAmount").default(0),
+  promoCode: text("promoCode"),
+  processingFee: integer("processingFee").default(0), // <--- NEW COLUMN
   total: integer("total").notNull(),
   paymentMethod: text("paymentMethod").notNull(),
   status: text("status").default("Pending"),
