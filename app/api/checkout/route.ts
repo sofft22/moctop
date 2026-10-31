@@ -15,20 +15,22 @@ export async function POST(request: Request) {
     });
 
     const body = await request.json();
-    const { customerDetails, orderId, orderData } = body;
+    // READ TOTAL DIRECTLY
+    const { customerDetails, orderId, total } = body;
 
-    // STRIPE WILL NOW CHARGE EXACTLY THE TOTAL FROM YOUR WEBSITE
-    const finalAmountInPence = Math.round(orderData.total * 100);
+    // Safety check: if total is missing, default to 0
+    const safeTotal = total || 0;
+    const finalAmountInPence = Math.round(safeTotal * 100);
 
     const lineItems = [
       {
         price_data: {
           currency: "gbp",
           product_data: {
-            name: "Mocktopia Order Total",
-            description: `Order ID: ${orderId} (Includes delivery & discounts)`,
+            name: "Mocktopia Order",
+            description: `Order ID: ${orderId}`,
           },
-          unit_amount: finalAmountInPence, // e.g., 350 for £3.50
+          unit_amount: finalAmountInPence,
         },
         quantity: 1,
       }
