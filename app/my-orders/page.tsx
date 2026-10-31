@@ -11,7 +11,6 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   
-  // State for the hidden PDF generation
   const [pdfOrder, setPdfOrder] = useState<any | null>(null);
   const hiddenReceiptRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -29,10 +28,9 @@ export default function MyOrdersPage() {
       .then(data => {
         const myOrders = data.filter((order: any) => myOrderIds.includes(order.id));
         
-        // Normalize the statuses so the 3-step tracker works perfectly
         const normalizedOrders = myOrders.map((o: any) => {
           let s = o.status || "Pending";
-          if (s === "Out for Delivery" || s === "Packaged" || s === "In the Oven") s = "Shipping";
+          if (s === "Out for Delivery" || s === "Packaged") s = "Shipping";
           return { ...o, status: s };
         });
 
@@ -105,7 +103,6 @@ export default function MyOrdersPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F5] relative">
       
-      {/* CHOCOLATE PAGE HEADER */}
       <section id="hero" className="bg-[#2C1A1D] pt-[88px] pb-16 px-6 md:pt-[104px] md:pb-24 md:px-12">
         <div className="mx-auto max-w-[800px]">
           <h1 className="text-[36px] md:text-[48px] text-[#FBF9F5]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
@@ -143,7 +140,7 @@ export default function MyOrdersPage() {
                       <p className="text-[12px] text-[#2C1A1D]/60 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
                         {new Date(order.date).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}
                       </p>
-                      <p className="text-[14px] font-bold text-[#2C1A1D] mt-2">£{order.total.toLocaleString()}</p>
+                      <p className="text-[14px] font-bold text-[#2C1A1D] mt-2">£{(order.total / 100).toFixed(2)}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
@@ -162,7 +159,6 @@ export default function MyOrdersPage() {
                   {isExpanded && (
                     <div className="border-t border-[#2C1A1D]/10 p-6 md:p-8 bg-[#FBF9F5]">
                       
-                      {/* EXACT 3-STEP TRACKING */}
                       <div className="mb-10 max-w-md">
                         <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Order Status</p>
                         <div className="relative flex justify-between">
@@ -208,23 +204,31 @@ export default function MyOrdersPage() {
                                   <p className="text-[14px] font-bold text-[#2C1A1D]">{item.title}</p>
                                   <p className="text-[12px] text-[#2C1A1D]/60 mt-1">Size: {item.size} | Qty: {item.qty}</p>
                                 </div>
-                                <p className="text-[14px] font-bold text-[#2C1A1D]">£{(item.price * item.qty).toLocaleString()}</p>
+                                <p className="text-[14px] font-bold text-[#2C1A1D]">£{((item.price * item.qty) / 100).toFixed(2)}</p>
                               </div>
                             ))}
                           </div>
 
                           <div className="flex flex-col items-end gap-2 border-t border-[#2C1A1D]/10 pt-4 text-[13px] text-[#2C1A1D]/70">
-                            <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{order.subtotal?.toLocaleString()}</span></div>
-                            <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{order.deliveryFee?.toLocaleString()}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{(order.subtotal / 100).toFixed(2)}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{(order.deliveryFee / 100).toFixed(2)}</span></div>
                             
                             {order.discountAmount > 0 && (
                               <div className="flex justify-between w-full max-w-[200px] text-green-600 font-bold">
                                 <span>Discount {order.promoCode ? `(${order.promoCode})` : ""}:</span>
-                                <span>-£{order.discountAmount.toLocaleString()}</span>
+                                <span>-£{(order.discountAmount / 100).toFixed(2)}</span>
                               </div>
                             )}
 
-                            <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2"><span>Total:</span><span>£{order.total?.toLocaleString()}</span></div>
+                            {/* PROCESSING FEE */}
+                            {order.processingFee > 0 && (
+                              <div className="flex justify-between w-full max-w-[200px]">
+                                <span>Processing Fee:</span>
+                                <span>£{(order.processingFee / 100).toFixed(2)}</span>
+                              </div>
+                            )}
+
+                            <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2"><span>Total:</span><span>£{(order.total / 100).toFixed(2)}</span></div>
                           </div>
                         </div>
                       </div>
@@ -304,24 +308,31 @@ export default function MyOrdersPage() {
                     </td>
                     <td className="text-center py-4 text-[14px] font-medium text-[#2C1A1D]/70">{item.size}</td>
                     <td className="text-center py-4 text-[14px] font-medium text-[#2C1A1D]/70">{item.qty}</td>
-                    <td className="text-right py-4 text-[15px] font-bold text-[#2C1A1D]">£{(item.price * item.qty).toLocaleString()}</td>
+                    <td className="text-right py-4 text-[15px] font-bold text-[#2C1A1D]">£{((item.price * item.qty) / 100).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
             <div className="flex flex-col items-end gap-3 border-t-2 border-[#2C1A1D]/10 pt-4 mb-10">
-              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{pdfOrder.subtotal?.toLocaleString()}</span></div>
-              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{pdfOrder.deliveryFee?.toLocaleString()}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{(pdfOrder.subtotal / 100).toFixed(2)}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{(pdfOrder.deliveryFee / 100).toFixed(2)}</span></div>
               
               {pdfOrder.discountAmount > 0 && (
                 <div className="flex justify-between w-full max-w-[300px] text-[14px] text-green-600 font-bold">
                   <span>Discount {pdfOrder.promoCode ? `(${pdfOrder.promoCode})` : ""}:</span>
-                  <span>-£{pdfOrder.discountAmount.toLocaleString()}</span>
+                  <span>-£{(pdfOrder.discountAmount / 100).toFixed(2)}</span>
                 </div>
               )}
 
-              <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{pdfOrder.total?.toLocaleString()}</span></div>
+              {pdfOrder.processingFee > 0 && (
+                <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70">
+                  <span>Processing Fee:</span>
+                  <span>£{(pdfOrder.processingFee / 100).toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{(pdfOrder.total / 100).toFixed(2)}</span></div>
             </div>
 
             <div className="text-center text-[12px] text-[#2C1A1D]/50 border-t border-[#2C1A1D]/10 pt-6">
