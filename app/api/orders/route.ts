@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { orders, promos, promoUsage } from "@/lib/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { orders } from "@/lib/schema";
+import { desc, eq } from "drizzle-orm";
 
 export async function GET() {
   const db = getDb();
@@ -19,34 +19,17 @@ export async function POST(request: Request) {
     phone: body.phone,
     address: body.address,
     city: body.city,
-    state: body.state,
     items: JSON.stringify(body.items),
     subtotal: body.subtotal,
     deliveryFee: body.deliveryFee,
     discountAmount: body.discountAmount || 0,
     promoCode: body.promoCode || null,
+    processingFee: body.processingFee || 0, // SAVES THE PROCESSING FEE
     total: body.total,
     paymentMethod: body.paymentMethod,
     status: "Pending",
     date: new Date().toISOString(),
   });
-
-  // If a promo was used, log the usage and increment the count
-  if (body.promoCode) {
-    const promo = await db.select().from(promos).where(eq(promos.code, body.promoCode)).then(res => res[0]);
-    if (promo) {
-      await db.update(promos)
-        .set({ currentUses: sql`${promos.currentUses} + 1` })
-        .where(eq(promos.id, promo.id));
-        
-      await db.insert(promoUsage).values({
-        id: `usage-${Date.now()}`,
-        promoId: promo.id,
-        phone: body.phone,
-        date: new Date().toISOString(),
-      });
-    }
-  }
 
   return NextResponse.json({ success: true });
 }
