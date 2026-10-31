@@ -138,7 +138,7 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <div className="w-[70px] md:w-[100px] shrink-0 text-right">
-                  <p className="text-[13px] md:text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{o.total?.toLocaleString()}</p>
+                  <p className="text-[13px] md:text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{(o.total / 100).toFixed(2)}</p>
                 </div>
               </button>
 
@@ -231,24 +231,39 @@ export default function AdminOrdersPage() {
                           <p className="text-[13px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>{item.title}</p>
                           <p className="text-[11px] text-[#2C1A1D]/50">Size: {item.size} | Qty: {item.qty}</p>
                         </div>
-                        <p className="text-[13px] font-bold text-[#2C1A1D]">£{(item.price * item.qty).toLocaleString()}</p>
+                        <p className="text-[13px] font-bold text-[#2C1A1D]">£{((item.price * item.qty) / 100).toFixed(2)}</p>
                       </div>
                     ))}
                     
                     <div className="p-4 bg-[#FBF9F5] border-t border-[#2C1A1D]/10 flex flex-col gap-2">
                       <div className="flex justify-between text-[12px] text-[#2C1A1D]/60">
-                        <span>Subtotal</span><span>£{selectedOrder.subtotal?.toLocaleString()}</span>
+                        <span>Subtotal</span><span>£{(selectedOrder.subtotal / 100).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-[12px] text-[#2C1A1D]/60">
-                        <span>Delivery</span><span>£{selectedOrder.deliveryFee?.toLocaleString()}</span>
+                        <span>Delivery</span><span>£{(selectedOrder.deliveryFee / 100).toFixed(2)}</span>
                       </div>
                       {selectedOrder.discountAmount > 0 && (
                         <div className="flex justify-between text-[12px] text-green-600 font-bold">
-                          <span>Discount</span><span>-£{selectedOrder.discountAmount?.toLocaleString()}</span>
+                          <span>Discount</span><span>-£{(selectedOrder.discountAmount / 100).toFixed(2)}</span>
                         </div>
                       )}
+                      
+                      {/* PROCESSING FEE */}
+                      {selectedOrder.processingFee > 0 && (
+                        <div className="flex justify-between text-[12px] text-[#2C1A1D]/60">
+                          <span>Processing Fee</span>
+                          <span>£{(selectedOrder.processingFee / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+
                       <div className="flex justify-between text-[15px] font-bold text-[#2C1A1D] border-t border-[#2C1A1D]/10 pt-2 mt-1">
-                        <span>Total Paid</span><span>£{selectedOrder.total?.toLocaleString()}</span>
+                        <span>Total Paid</span><span>£{(selectedOrder.total / 100).toFixed(2)}</span>
+                      </div>
+
+                      {/* NET PAYOUT */}
+                      <div className="flex justify-between text-[12px] font-bold text-green-700 mt-1 bg-green-50 p-2 rounded">
+                        <span>Net Payout (After Fee)</span>
+                        <span>£{((selectedOrder.total - selectedOrder.processingFee) / 100).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -257,8 +272,7 @@ export default function AdminOrdersPage() {
               </div>
             </div>
 
-            {/* SAVE BUTTON */}
-            <div className="mt-auto p-4 md:p-6 pb-8 md:pb-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
+            <div className="p-4 md:p-6 pb-8 md:pb-6 bg-white border-t border-[#2C1A1D]/10 shrink-0">
               <button 
                 onClick={handleSaveStatus} 
                 disabled={isSaving || newStatus === selectedOrder.status}
