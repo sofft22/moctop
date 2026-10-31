@@ -10,6 +10,7 @@ export default function CheckoutPage() {
   const [settings, setSettings] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Form State
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -18,9 +19,11 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [saveDetails, setSaveDetails] = useState(false);
 
+  // Delivery State
   const [selectedZone, setSelectedZone] = useState<any>(null);
   const [zones, setZones] = useState<any[]>([]);
 
+  // Promo State
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [promoError, setPromoError] = useState("");
@@ -50,6 +53,7 @@ export default function CheckoutPage() {
 
   const shipping = selectedZone ? selectedZone.price : 0;
   
+  // Calculate Discount
   let discountAmount = 0;
   if (appliedPromo) {
     if (appliedPromo.type === "percentage") {
@@ -59,7 +63,17 @@ export default function CheckoutPage() {
     }
   }
 
-  const total = Math.max(0, cartTotal + shipping - discountAmount);
+  // 1. Calculate the base amount before processing fee
+  const baseAmount = Math.max(0, cartTotal + shipping - discountAmount);
+
+  // 2. Calculate the Stripe Processing Fee (1.5% + £0.20)
+  const feePercentage = 0.015;
+  const fixedFee = 0.20;
+  const processingFee = Number((baseAmount * feePercentage + fixedFee).toFixed(2));
+
+  // 3. The final total
+  const total = Number((baseAmount + processingFee).toFixed(2));
+  
   const canSubmit = Boolean(firstName.trim() && lastName.trim() && phone.trim() && address.trim() && city.trim() && selectedZone);
 
   const handleApplyPromo = async () => {
@@ -116,7 +130,8 @@ export default function CheckoutPage() {
       deliveryFee: shipping,
       discountAmount: discountAmount,
       promoCode: appliedPromo ? appliedPromo.code : null,
-      total,
+      processingFee: Math.round(processingFee * 100), // Saved in pence
+      total: Math.round(total * 100),                // Saved in pence
       paymentMethod: "Stripe",
     }));
 
@@ -132,7 +147,7 @@ export default function CheckoutPage() {
             phone 
           },
           orderId: orderId,
-          total: total, // <--- SENDING TOTAL DIRECTLY (NOT IN AN OBJECT)
+          total: total, // SENDING THE EXACT TOTAL (INCLUDING FEE) TO STRIPE
         }),
       });
 
@@ -189,10 +204,19 @@ export default function CheckoutPage() {
             })}
           </div>
           
+          {/* PROMO CODE SECTION */}
           <div className="mb-4">
             <div className="flex gap-2">
-              <input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} type="text" placeholder="Promo Code" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" />
-              <button onClick={handleApplyPromo} disabled={checkingPromo || !promoCode} className="rounded-md bg-[#EBE0D3] px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#DCD0C2] disabled:opacity-50 transition-colors">Apply</button>
+              <input 
+                value={promoCode} 
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())} 
+                type="text" 
+                placeholder="Promo Code" 
+                className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" 
+              />
+              <button onClick={handleApplyPromo} disabled={checkingPromo || !promoCode} className="rounded-md bg-[#EBE0D3] px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#DCD0C2] disabled:opacity-50 transition-colors">
+                Apply
+              </button>
             </div>
             {promoError && <p className="text-red-500 text-[11px] mt-1 font-bold">{promoError}</p>}
             {appliedPromo && <p className="text-green-600 text-[11px] mt-1 font-bold">Code {appliedPromo.code} applied!</p>}
@@ -204,6 +228,12 @@ export default function CheckoutPage() {
           {discountAmount > 0 && (
             <div className="flex justify-between text-[13px] text-green-600 font-bold mb-2"><span>Discount</span><span>-£{discountAmount.toLocaleString()}</span></div>
           )}
+
+          {/* PROCESSING FEE LINE */}
+          <div className="flex justify-between text-[13px] text-[#2C1A1D]/60 mb-2">
+            <span>Processing Fee</span>
+            <span>£{processingFee.toFixed(2)}</span>
+          </div>
 
           <div className="flex justify-between border-t border-[#2C1A1D]/10 pt-3 text-[16px] font-bold text-[#2C1A1D]"><span>Total</span><span>£{total.toFixed(2)}</span></div>
         </div>
