@@ -1,12 +1,12 @@
-name = "moctop"
-compatibility_date = "2025-05-10" # <-- UPDATED
+name = "moctopiatreats" # <-- UPDATED TO MATCH HER ACCOUNT
+compatibility_date = "2025-05-10"
 compatibility_flags = ["nodejs_compat"]
-keep_names = false # <-- ADDED
+keep_names = false
 
 main = ".open-next/worker.js"
 assets = { directory = ".open-next/assets", binding = "ASSETS" }
 
 [[d1_databases]]
 binding = "DB"
-database_name = "mocktopia-db"
-database_id = "a2743ce48-b4e5-4ec2-815b-55c6c8c66a90"
+database_name = "mocktopia-db" # Make sure this matches her exact DB name
+database_id = "2743ce48-b4e5-4ec2-815b-55c6c8c66a90" # <-- MAKE SURE THIS IS HER NEW ID
