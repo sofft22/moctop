@@ -14,7 +14,7 @@ const MINI_BOX_PRODUCT = {
   id: "custom-mini-boxes",
   title: "Mini Boxes",
   price: "20",
-  image: "/box-builder-home.PNG", // YOUR CAPITAL PNG
+  image: "/box-builder-home.PNG", 
   featured: 1,
   inStock: 1,
   isCustomBox: true,
@@ -25,7 +25,6 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Instantly load from localStorage
     const cached = localStorage.getItem("mocktopia_products_cache");
     if (cached) {
       try {
@@ -36,7 +35,6 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
       } catch (e) {}
     }
 
-    // 2. Fetch fresh data in background
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
@@ -50,7 +48,6 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
   if (loading) return null; 
   if (featuredItems.length === 0) return null;
 
-  // ADD MINI BOX AS FIRST ITEM
   const displayItems = [MINI_BOX_PRODUCT, ...featuredItems];
 
   return (
@@ -78,7 +75,6 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
               }} 
             >
               {item.isCustomBox ? (
-                // CUSTOM RENDER FOR MINI BOX TO FORCE FAST LOADING
                 <div className="group flex flex-col cursor-pointer w-full">
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3]">
                     <Image
@@ -86,7 +82,7 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
                       alt={item.title}
                       fill
                       priority={true}
-                      unoptimized={true} // BYPASSES NEXT.JS SLOW OPTIMIZER
+                      unoptimized={true} 
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                   </div>
@@ -97,7 +93,15 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
                     >
                       {item.title}
                     </h3>
-                    <div className="flex items-baseline">
+                    
+                    {/* ADDED "FROM" HERE */}
+                    <div className="flex items-baseline gap-1">
+                      <span 
+                        className="text-[11px] font-medium text-[#2C1A1D]/50"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                      >
+                        From
+                      </span>
                       <p 
                         className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight"
                         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
@@ -108,7 +112,6 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
                   </div>
                 </div>
               ) : (
-                // NORMAL PRODUCT CARD FOR THE REST
                 <ProductCard 
                   product={{
                     ...item,
