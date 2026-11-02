@@ -19,6 +19,10 @@ interface Props {
 export function ProductCard({ product, priority }: Props) {
   const [imgLoaded, setImgLoaded] = useState(false);
 
+  const numericPrice = typeof product.price === "number" 
+    ? product.price 
+    : parseInt(String(product.price).replace(/[^0-9]/g, ""), 10);
+
   const formattedTitle = product.title.replace(/\b\w/g, (char) => char.toUpperCase());
   const isSoldOut = product.inStock === 0;
 
@@ -57,6 +61,22 @@ export function ProductCard({ product, priority }: Props) {
         >
           {formattedTitle}
         </h3>
+        
+        <div className="flex items-baseline gap-1">
+          {/* ADDED "FROM" HERE */}
+          <span 
+            className="text-[11px] font-medium text-[#2C1A1D]/50"
+            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+          >
+            From
+          </span>
+          <p 
+            className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight"
+            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+          >
+            £{numericPrice.toLocaleString()}
+          </p>
+        </div>
       </div>
 
     </div>
