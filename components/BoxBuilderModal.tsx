@@ -22,7 +22,8 @@ export function BoxBuilderModal({ config, onClose }: Props) {
   const totalSelected = Object.values(selectedToppings).reduce((a, b) => a + b, 0);
   const isComplete = totalSelected === selectedSlots;
 
-  const handleAddOne = (toppingId: string) => {
+  const handleAddOne = (toppingId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (totalSelected >= selectedSlots) return;
     setSelectedToppings(prev => ({
       ...prev,
@@ -30,11 +31,15 @@ export function BoxBuilderModal({ config, onClose }: Props) {
     }));
   };
 
-  const handleRemoveAll = (e: React.MouseEvent, toppingId: string) => {
+  const handleRemoveOne = (toppingId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedToppings(prev => {
       const newState = { ...prev };
-      delete newState[toppingId];
+      if (newState[toppingId] > 1) {
+        newState[toppingId] -= 1;
+      } else {
+        delete newState[toppingId];
+      }
       return newState;
     });
   };
@@ -135,20 +140,27 @@ export function BoxBuilderModal({ config, onClose }: Props) {
                         priority={index < 4}
                         className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${isSelected ? "scale-105" : ""}`} 
                       />
-                      
-                      {isSelected && (
-                        <button 
-                          onClick={(e) => handleRemoveAll(e, topping.id)}
-                          className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-[#2C1A1D] hover:bg-white shadow-sm transition-transform hover:scale-110"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
-                        </button>
-                      )}
 
+                      {/* QUANTITY SELECTOR OVERLAY */}
                       {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 pointer-events-none">
-                          <div className="bg-white text-[#2C1A1D] h-10 w-10 rounded-full flex items-center justify-center font-bold text-[15px] shadow-md">
-                            {count}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px] transition-opacity">
+                          <div className="flex items-center gap-3 rounded-full bg-white px-2 py-1 shadow-lg">
+                            <button 
+                              onClick={(e) => handleRemoveOne(topping.id, e)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-[#2C1A1D] hover:bg-[#FBF9F5] transition-colors text-lg"
+                            >
+                              −
+                            </button>
+                            <span className="text-[14px] font-bold text-[#2C1A1D] w-4 text-center">
+                              {count}
+                            </span>
+                            <button 
+                              onClick={(e) => handleAddOne(topping.id, e)}
+                              disabled={isFull}
+                              className={`flex h-8 w-8 items-center justify-center rounded-full text-[#2C1A1D] transition-colors text-lg ${isFull ? "opacity-30 cursor-not-allowed" : "hover:bg-[#FBF9F5]"}`}
+                            >
+                              +
+                            </button>
                           </div>
                         </div>
                       )}
@@ -159,12 +171,14 @@ export function BoxBuilderModal({ config, onClose }: Props) {
                         {formattedTitle}
                       </h3>
                       
-                      <p 
-                        className={`text-[11px] mt-1.5 transition-colors ${isSelected ? "text-[#2C1A1D]/60 font-medium" : "text-[#2C1A1D]/40 hover:text-[#2C1A1D]"}`}
-                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-                      >
-                        {isSelected ? "Click to add more" : "Click to add"}
-                      </p>
+                      {!isSelected && (
+                        <p 
+                          className="text-[11px] mt-1.5 text-[#2C1A1D]/40 hover:text-[#2C1A1D] transition-colors"
+                          style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                        >
+                          Click to add
+                        </p>
+                      )}
                     </div>
 
                   </div>
@@ -174,7 +188,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
           </div>
         </div>
 
-        {/* SLIM STICKY FOOTER (FIXED) */}
+        {/* SLIM STICKY FOOTER */}
         <div className="shrink-0 border-t border-[#2C1A1D]/10 bg-white">
           <div className="max-w-[1200px] mx-auto px-6 py-4 md:px-10 md:py-4 flex items-center justify-between gap-4">
             <div className="flex flex-col">
