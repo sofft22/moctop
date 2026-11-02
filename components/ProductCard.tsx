@@ -1,84 +1,135 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
-
-interface Product {
-  id: string;
-  title: string;
-  price: string | number;
-  image: string;
-  inStock?: number;
-}
+import { ProductCard } from "./ProductCard";
 
 interface Props {
-  product: Product;
-  priority?: boolean;
+  onProductClick: (product: any) => void;
+  onBoxClick: () => void; 
 }
 
-export function ProductCard({ product, priority }: Props) {
-  const [imgLoaded, setImgLoaded] = useState(false);
+const MINI_BOX_PRODUCT = {
+  id: "custom-mini-boxes",
+  title: "Mini Boxes",
+  price: "20",
+  image: "/box-builder-home.PNG", // YOUR CAPITAL PNG
+  featured: 1,
+  inStock: 1,
+  isCustomBox: true,
+};
 
-  const numericPrice = typeof product.price === "number" 
-    ? product.price 
-    : parseInt(String(product.price).replace(/[^0-9]/g, ""), 10);
+export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
+  const [featuredItems, setFeaturedItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const formattedTitle = product.title.replace(/\b\w/g, (char) => char.toUpperCase());
-  const isSoldOut = product.inStock === 0;
+  useEffect(() => {
+    // 1. Instantly load from localStorage
+    const cached = localStorage.getItem("mocktopia_products_cache");
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        const featured = parsed.filter((p: any) => p.featured === 1);
+        setFeaturedItems(featured.slice(0, 5)); 
+        setLoading(false);
+      } catch (e) {}
+    }
+
+    // 2. Fetch fresh data in background
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        const featured = data.filter((p: any) => p.featured === 1);
+        setFeaturedItems(featured.slice(0, 5));
+        setLoading(false);
+        localStorage.setItem("mocktopia_products_cache", JSON.stringify(data));
+      });
+  }, []);
+
+  if (loading) return null; 
+  if (featuredItems.length === 0) return null;
+
+  // ADD MINI BOX AS FIRST ITEM
+  const displayItems = [MINI_BOX_PRODUCT, ...featuredItems];
 
   return (
-    <div className="group flex flex-col cursor-pointer w-full">
-      
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3]">
-        {!imgLoaded && (
-          <div className="absolute inset-0 animate-pulse bg-[#EBE0D3]" />
-        )}
-
-        <Image
-          src={product.image || "/placeholder.png"}
-          alt={formattedTitle}
-          fill
-          priority={priority}
-          onLoad={() => setImgLoaded(true)}
-          className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
-            imgLoaded ? "opacity-100" : "opacity-0"
-          } ${isSoldOut ? "opacity-60 grayscale" : ""}`}
-        />
-
-        {isSoldOut && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-            <span className="bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#2C1A1D]">
-              Sold Out
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-3 flex flex-col gap-1">
-        <h3 
-          className="text-[12px] md:text-[13px] font-semibold truncate leading-[1.3] tracking-[0.01em] text-[#2C1A1D]"
-          style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-        >
-          {formattedTitle}
-        </h3>
+    <section className="w-full bg-[#FBF9F5] py-16 px-4 md:py-24 md:px-6 border-t border-[#2C1A1D]/10">
+      <div className="mx-auto max-w-[1400px]">
         
-        <div className="flex items-baseline gap-1">
-          {/* ADDED "FROM" HERE */}
-          <span 
-            className="text-[11px] font-medium text-[#2C1A1D]/50"
-            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-          >
-            From
-          </span>
-          <p 
-            className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight"
-            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-          >
-            £{numericPrice.toLocaleString()}
-          </p>
+        <div className="mb-8 flex flex-row items-end justify-between">
+          <h2 className="text-[24px] md:text-[48px] font-normal text-[#2C1A1D] whitespace-nowrap" style={{ fontFamily: 'var(--font-dm-serif), serif' }}>
+            Signature Treats
+          </h2>
+          <Link href="/shop" className="group flex shrink-0 items-center gap-2 pb-1 text-[10px] md:text-[11px] font-medium uppercase tracking-[0.15em] text-[#2C1A1D] transition-colors hover:opacity-60" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+            <span className="border-b border-[#2C1A1D] pb-0.5 whitespace-nowrap">See More</span>
+            <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </Link>
         </div>
-      </div>
 
-    </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-5 lg:gap-x-5 lg:gap-y-14">
+          {displayItems.map((item, idx) => (
+            <div 
+              key={item.id} 
+              className={`${idx >= 4 ? "lg:hidden" : "block"} rounded-xl overflow-hidden group cursor-pointer`} 
+              onClick={() => {
+                if (item.isCustomBox) onBoxClick();
+                else onProductClick(item);
+              }} 
+            >
+              {item.isCustomBox ? (
+                // CUSTOM RENDER FOR MINI BOX WITH "FROM" PRICE
+                <div className="group flex flex-col cursor-pointer w-full">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[#EBE0D3]">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      priority={true}
+                      unoptimized={true} // BYPASSES NEXT.JS SLOW OPTIMIZER
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-col gap-1">
+                    <h3 
+                      className="text-[12px] md:text-[13px] font-semibold truncate leading-[1.3] tracking-[0.01em] text-[#2C1A1D]"
+                      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                    >
+                      {item.title}
+                    </h3>
+                    <div className="flex items-baseline gap-1">
+                      {/* ADDED "FROM" HERE */}
+                      <span 
+                        className="text-[11px] font-medium text-[#2C1A1D]/50"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                      >
+                        From
+                      </span>
+                      <p 
+                        className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                      >
+                        £{item.price}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // NORMAL PRODUCT CARD FOR THE REST
+                <ProductCard 
+                  product={{
+                    ...item,
+                    price: `£${item.price.toLocaleString()}`, 
+                    sizes: JSON.parse(item.sizes || "[]")
+                  }} 
+                  priority={idx < 2}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </section>
   );
 }
