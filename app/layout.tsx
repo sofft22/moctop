@@ -5,14 +5,14 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "./CartContext";
 import { CartDrawer } from "@/components/CartDrawer";
 
-// THIS IS WHERE YOU PUT YOUR META TAGS
 export const metadata: Metadata = {
   title: "Mocktopia Treats | Banana Bread & Mocktails in Plymouth",
-  description: "Freshly baked banana bread, golden puff puffs, and refreshing mocktails. Delivered locally in Plymouth and shipped across the UK. Build your own custom box today!",
+  
+  // FIXED: Shortened to under 160 characters so Google doesn't cut it off
+  description: "Freshly baked banana bread, puff puffs & mocktails. Delivered in Plymouth & across the UK. Build your own custom box today!",
   
   metadataBase: new URL('https://mocktopiatreats.com'),
   
-  // This is for WhatsApp, Twitter, Facebook, etc.
   openGraph: {
     title: "Mocktopia Treats | Sips & Treats",
     description: "Mix and match your favorite treats. Available in boxes of 6 or 8. Delivered in Plymouth.",
@@ -22,12 +22,11 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        // Because you are putting the image in the "public" folder, 
-        // we just reference the file name here.
-        url: '/og-image.png', 
+        // FIXED: Changed to .jpg since you saved it as a JPG
+        url: '/og-image.jpg', 
         width: 1200,
         height: 630,
-        alt: 'Mocktopia Treats Banana Bread',
+        alt: 'Mocktopia Treats Logo',
       },
     ],
   },
