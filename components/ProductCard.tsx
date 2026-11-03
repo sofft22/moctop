@@ -19,9 +19,13 @@ interface Props {
 export function ProductCard({ product, priority }: Props) {
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const numericPrice = typeof product.price === "number" 
+  // 1. Handle both string ("2.50") and number (250) prices safely
+  const rawPrice = typeof product.price === "number" 
     ? product.price 
-    : parseInt(String(product.price).replace(/[^0-9]/g, ""), 10);
+    : parseFloat(String(product.price).replace(/[^0-9.]/g, ""));
+  
+  // 2. Divide by 100 to convert pence to pounds (250 -> 2.50)
+  const numericPrice = rawPrice / 100;
 
   const formattedTitle = product.title.replace(/\b\w/g, (char) => char.toUpperCase());
   const isSoldOut = product.inStock === 0;
@@ -64,16 +68,18 @@ export function ProductCard({ product, priority }: Props) {
         
         <div className="flex items-baseline gap-1">
           <span 
-            className="text-[11px] font-medium text-[#2C1A1D]/50"
+            // CHANGED TO CHOCOLATE
+            className="text-[11px] font-medium text-[#2C1A1D]/70"
             style={{ fontFamily: 'var(--font-inter), sans-serif' }}
           >
             From
           </span>
           <p 
-            className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight"
+            // CHANGED TO CHOCOLATE
+            className="text-[14px] font-extrabold text-[#2C1A1D] tracking-tight"
             style={{ fontFamily: 'var(--font-inter), sans-serif' }}
           >
-            £{numericPrice.toLocaleString()}
+            £{numericPrice.toFixed(2)}
           </p>
         </div>
       </div>
