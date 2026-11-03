@@ -94,19 +94,18 @@ export function FeaturedProducts({ onProductClick, onBoxClick }: Props) {
                       {item.title}
                     </h3>
                     
-                    {/* ADDED "FROM" HERE */}
                     <div className="flex items-baseline gap-1">
                       <span 
-                        className="text-[11px] font-medium text-[#2C1A1D]/50"
+                        className="text-[11px] font-medium text-[#2C1A1D]/70"
                         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                       >
                         From
                       </span>
                       <p 
-                        className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight"
+                        className="text-[14px] font-extrabold text-[#2C1A1D] tracking-tight"
                         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                       >
-                        £{item.price}
+                        £{Number(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                   </div>
