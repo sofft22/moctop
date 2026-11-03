@@ -107,7 +107,9 @@ export function ProductModal({ product, onClose, allProducts = [] }: Props) {
   if (!product) return null;
 
   const currentSizeObj = parsedSizes.find(s => s.size === selectedSize);
-  const currentPrice = currentSizeObj ? currentSizeObj.price : product.price;
+  // FIXED: Ensure the current price is a number
+  const rawCurrentPrice = currentSizeObj ? currentSizeObj.price : product.price;
+  const currentPrice = typeof rawCurrentPrice === "number" ? rawCurrentPrice : parseFloat(String(rawCurrentPrice).replace(/[^0-9.]/g, ""));
   const totalPrice = currentPrice * qty;
 
   const handleAdd = () => {
@@ -212,7 +214,8 @@ export function ProductModal({ product, onClose, allProducts = [] }: Props) {
               <div className="w-full md:w-1/2 flex flex-col p-6 md:p-10">
                 <div className="mb-6">
                   <h2 className="text-[28px] leading-tight text-[#2C1A1D] md:text-[36px]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>{product.title}</h2>
-                  <p className="mt-3 text-[18px] font-semibold text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{currentPrice.toLocaleString()}</p>
+                  {/* FIXED MAIN PRICE TO 2 DECIMALS */}
+                  <p className="mt-3 text-[18px] font-semibold text-[#2C1A1D]/70" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{currentPrice.toFixed(2)}</p>
                 </div>
 
                 <p className="text-[14px] leading-relaxed text-[#2C1A1D]/70 mb-8" style={{ fontFamily: "var(--font-inter), sans-serif" }}>{product.description}</p>
@@ -253,7 +256,8 @@ export function ProductModal({ product, onClose, allProducts = [] }: Props) {
                     <button disabled className="w-full rounded-md py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] bg-[#2C1A1D]/10 text-[#2C1A1D]/40 cursor-not-allowed" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Sold Out</button>
                   ) : (
                     <button onClick={handleAdd} className={`w-full rounded-md py-4 text-center text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 ${addedFlash ? "bg-[#1F1315] text-[#FBF9F5] scale-[0.98]" : "bg-[#2C1A1D] text-[#FBF9F5] hover:bg-[#1F1315]"}`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                      {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toLocaleString()}`}
+                      {/* FIXED TOTAL PRICE TO 2 DECIMALS */}
+                      {addedFlash ? "Added to Bag ✓" : `Add to Bag — £${totalPrice.toFixed(2)}`}
                     </button>
                   )}
 
@@ -289,7 +293,8 @@ export function ProductModal({ product, onClose, allProducts = [] }: Props) {
                   <h3 className="mb-6 text-[24px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Frequently bought together</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-5 md:gap-y-12">
                     {relatedProducts.map((p) => {
-                      const numericPrice = typeof p.price === "number" ? p.price : parseInt(String(p.price).replace(/[^0-9]/g, ""), 10);
+                      // FIXED: Ensure prices in FBT render correctly with decimals
+                      const rawPrice = typeof p.price === "number" ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, ""));
                       const formattedTitle = p.title.replace(/\b\w/g, (char: string) => char.toUpperCase());
                       return (
                         <div key={p.id} className="group flex flex-col cursor-pointer w-full">
@@ -299,9 +304,8 @@ export function ProductModal({ product, onClose, allProducts = [] }: Props) {
                           <div className="mt-3 flex flex-col gap-1">
                             <h3 className="text-[12px] md:text-[13px] font-semibold truncate leading-[1.3] tracking-[0.01em] text-[#2C1A1D]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>{formattedTitle}</h3>
                             <div className="flex items-baseline gap-1">
-                              {/* ADDED "FROM" HERE */}
                               <span className="text-[11px] font-medium text-[#2C1A1D]/50" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>From</span>
-                              <p className="text-[14px] font-extrabold text-[#2C1A1D] tracking-tight" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>£{numericPrice.toLocaleString()}</p>
+                              <p className="text-[14px] font-extrabold text-[#2C1A1D] tracking-tight" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>£{rawPrice.toFixed(2)}</p>
                             </div>
                           </div>
                         </div>
