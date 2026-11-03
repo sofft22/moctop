@@ -283,7 +283,7 @@ export function ProductModal({ product, onClose, allProducts = [] }: Props) {
 
             <div className="w-full bg-[#FBF9F5] p-6 md:p-10">
               
-              {/* FREQUENTLY BOUGHT TOGETHER (Using exact ProductCard style inline to fix build) */}
+              {/* FREQUENTLY BOUGHT TOGETHER */}
               {relatedProducts.length > 0 && (
                 <div className="mb-14">
                   <h3 className="mb-6 text-[24px] text-[#2C1A1D]" style={{ fontFamily: "var(--font-dm-serif), serif" }}>Frequently bought together</h3>
@@ -298,8 +298,10 @@ export function ProductModal({ product, onClose, allProducts = [] }: Props) {
                           </div>
                           <div className="mt-3 flex flex-col gap-1">
                             <h3 className="text-[12px] md:text-[13px] font-semibold truncate leading-[1.3] tracking-[0.01em] text-[#2C1A1D]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>{formattedTitle}</h3>
-                            <div className="flex items-baseline">
-                              <p className="text-[14px] font-extrabold text-[#2C1A1D]/60 tracking-tight" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>£{numericPrice.toLocaleString()}</p>
+                            <div className="flex items-baseline gap-1">
+                              {/* ADDED "FROM" HERE */}
+                              <span className="text-[11px] font-medium text-[#2C1A1D]/50" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>From</span>
+                              <p className="text-[14px] font-extrabold text-[#2C1A1D] tracking-tight" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>£{numericPrice.toLocaleString()}</p>
                             </div>
                           </div>
                         </div>
