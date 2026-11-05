@@ -19,10 +19,6 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [saveDetails, setSaveDetails] = useState(false);
 
-  // Delivery State
-  const [selectedZone, setSelectedZone] = useState<any>(null);
-  const [zones, setZones] = useState<any[]>([]);
-
   // Promo State
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
@@ -32,11 +28,6 @@ export default function CheckoutPage() {
   useEffect(() => {
     fetch("/api/settings").then(res => res.json()).then(data => {
       setSettings(data);
-      if (data.deliveryZones) {
-        const parsedZones = JSON.parse(data.deliveryZones);
-        setZones(parsedZones);
-        if (parsedZones.length > 0) setSelectedZone(parsedZones[0]);
-      }
     });
 
     const saved = localStorage.getItem("mocktopia_customer_details");
@@ -51,8 +42,34 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  const shipping = selectedZone ? selectedZone.price : 0;
-  
+  // --- NEW: Calculate Total Weight ---
+  const totalWeight = cart.reduce((total: number, item: any) => {
+    // 1. If the item has a weight property, use it.
+    // 2. If the size has a weight property inside the sizes array, use it.
+    // 3. Otherwise, default to 0 (to avoid errors if old products don't have weight yet).
+    let itemWeight = item.weight || 0;
+    
+    if (item.size && item.sizes) {
+      const sizeObj = item.sizes.find((s: any) => s.name === item.size);
+      if (sizeObj && sizeObj.weight) {
+        itemWeight = sizeObj.weight;
+      }
+    }
+    return total + (itemWeight * item.qty);
+  }, 0);
+
+  // --- NEW: Calculate Shipping based on Weight ---
+  let shipping = 0;
+  if (totalWeight > 0) {
+    if (totalWeight <= 2) {
+      shipping = 4.80;
+    } else if (totalWeight <= 20) {
+      shipping = 7.50;
+    } else {
+      shipping = 7.50; // Fallback for over 20kg (or you can block checkout)
+    }
+  }
+
   // Calculate Discount
   let discountAmount = 0;
   if (appliedPromo) {
@@ -63,18 +80,13 @@ export default function CheckoutPage() {
     }
   }
 
-  // 1. Calculate the base amount before processing fee
   const baseAmount = Math.max(0, cartTotal + shipping - discountAmount);
-
-  // 2. Calculate the Stripe Processing Fee (1.5% + £0.20)
   const feePercentage = 0.015;
   const fixedFee = 0.20;
   const processingFee = Number((baseAmount * feePercentage + fixedFee).toFixed(2));
-
-  // 3. The final total
   const total = Number((baseAmount + processingFee).toFixed(2));
   
-  const canSubmit = Boolean(firstName.trim() && lastName.trim() && phone.trim() && address.trim() && city.trim() && selectedZone);
+  const canSubmit = Boolean(firstName.trim() && lastName.trim() && phone.trim() && address.trim() && city.trim());
 
   const handleApplyPromo = async () => {
     if (!promoCode) return;
@@ -115,10 +127,10 @@ export default function CheckoutPage() {
       price: typeof item.price === "number" ? item.price : parseInt(String(item.price).replace(/[^0-9]/g, ""), 10),
       qty: item.qty,
       size: item.size,
-      image: item.image
+      image: item.image,
+      weight: item.weight // Include weight just in case
     }));
 
-    // SAVE FULL DATA TO LOCAL STORAGE FOR THE SUCCESS PAGE
     localStorage.setItem(`pending_order_${orderId}`, JSON.stringify({
       orderId,
       customerName: `${firstName} ${lastName}`,
@@ -130,8 +142,8 @@ export default function CheckoutPage() {
       deliveryFee: shipping,
       discountAmount: discountAmount,
       promoCode: appliedPromo ? appliedPromo.code : null,
-      processingFee: Math.round(processingFee * 100), // Saved in pence
-      total: Math.round(total * 100),                // Saved in pence
+      processingFee: Math.round(processingFee * 100),
+      total: Math.round(total * 100),
       paymentMethod: "Stripe",
     }));
 
@@ -140,14 +152,14 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: cart,
+          items: cart, // SEND FULL CART (So backend can calculate weight securely)
           customerDetails: { 
             email: email || "no-email@example.com", 
             customerName: `${firstName} ${lastName}`, 
             phone 
           },
           orderId: orderId,
-          total: total, // SENDING THE EXACT TOTAL (INCLUDING FEE) TO STRIPE
+          appliedPromoCode: appliedPromo ? appliedPromo.code : null, // Send promo to backend
         }),
       });
 
@@ -204,7 +216,6 @@ export default function CheckoutPage() {
             })}
           </div>
           
-          {/* PROMO CODE SECTION */}
           <div className="mb-4">
             <div className="flex gap-2">
               <input 
@@ -223,13 +234,17 @@ export default function CheckoutPage() {
           </div>
 
           <div className="flex justify-between text-[13px] text-[#2C1A1D]/60 mb-2"><span>Subtotal</span><span>£{cartTotal.toLocaleString()}</span></div>
-          <div className="flex justify-between text-[13px] text-[#2C1A1D]/60 mb-2"><span>Delivery</span><span>£{shipping.toFixed(2)}</span></div>
+          
+          {/* Weight & Shipping Display */}
+          <div className="flex justify-between text-[13px] text-[#2C1A1D]/60 mb-2">
+            <span>Delivery (Est. Weight: {totalWeight.toFixed(2)}kg)</span>
+            <span>£{shipping.toFixed(2)}</span>
+          </div>
           
           {discountAmount > 0 && (
             <div className="flex justify-between text-[13px] text-green-600 font-bold mb-2"><span>Discount</span><span>-£{discountAmount.toLocaleString()}</span></div>
           )}
 
-          {/* PROCESSING FEE LINE */}
           <div className="flex justify-between text-[13px] text-[#2C1A1D]/60 mb-2">
             <span>Processing Fee</span>
             <span>£{processingFee.toFixed(2)}</span>
@@ -247,20 +262,12 @@ export default function CheckoutPage() {
         </div>
 
         <div className="mb-8">
-          <h2 className="mb-4 text-[12px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]">Delivery</h2>
+          <h2 className="mb-4 text-[12px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]">Delivery Address</h2>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <input value={firstName} onChange={e => setFirstName(e.target.value)} type="text" placeholder="First Name" required className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" />
             <input value={lastName} onChange={e => setLastName(e.target.value)} type="text" placeholder="Last Name" required className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" />
             <input value={address} onChange={e => setAddress(e.target.value)} type="text" placeholder="Street Address" required className="col-span-2 w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" />
             <input value={city} onChange={e => setCity(e.target.value)} type="text" placeholder="City" required className="col-span-2 w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" />
-          </div>
-          
-          <div className="mt-2">
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Delivery Location</label>
-            <select value={selectedZone?.name || ""} onChange={(e) => { const zone = zones.find(z => z.name === e.target.value); setSelectedZone(zone); }} className="w-full appearance-none rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]">
-              {zones.length === 0 && <option value="">Loading locations...</option>}
-              {zones.map((z) => <option key={z.name} value={z.name}>{z.name} — £{z.price.toFixed(2)}</option>)}
-            </select>
           </div>
         </div>
 
