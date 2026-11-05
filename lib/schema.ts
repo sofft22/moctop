@@ -1,10 +1,11 @@
 // lib/schema.ts
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 
 export const products = sqliteTable("products", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   price: integer("price").notNull(),
+  weight: real("weight").default(0), // <--- NEW COLUMN ADDED HERE
   description: text("description"),
   category: text("category").notNull(),
   image: text("image").notNull(),
@@ -27,7 +28,7 @@ export const orders = sqliteTable("orders", {
   deliveryFee: integer("deliveryFee").notNull(),
   discountAmount: integer("discountAmount").default(0),
   promoCode: text("promoCode"),
-  processingFee: integer("processingFee").default(0), // <--- NEW COLUMN
+  processingFee: integer("processingFee").default(0), 
   total: integer("total").notNull(),
   paymentMethod: text("paymentMethod").notNull(),
   status: text("status").default("Pending"),
@@ -54,15 +55,14 @@ export const settings = sqliteTable("settings", {
   accountNumber: text("accountNumber"),
   bannerText: text("bannerText"),
   bannerActive: integer("bannerActive").default(0),
-  // NEW COLUMN FOR BOX BUILDER
   boxBuilderConfig: text("boxBuilderConfig"), 
 });
 
 export const promos = sqliteTable("promos", {
   id: text("id").primaryKey(),
   code: text("code").notNull().unique(),
-  type: text("type").notNull(), // "percentage" or "flat"
-  value: integer("value").notNull(), // 10 for 10%, 500 for £5.00
+  type: text("type").notNull(), 
+  value: integer("value").notNull(), 
   minSpend: integer("minSpend").default(0),
   maxUses: integer("maxUses").default(0),
   currentUses: integer("currentUses").default(0),
