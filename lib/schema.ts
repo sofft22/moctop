@@ -2,7 +2,7 @@
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 
 export const products = sqliteTable("products", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey(), 
   title: text("title").notNull(),
   price: integer("price").notNull(),
   weight: real("weight").default(0), // <--- NEW COLUMN ADDED HERE
