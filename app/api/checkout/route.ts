@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const { env } = getCloudflareContext();
     const stripeSecret = (env as any).STRIPE_SECRET_KEY;
 
-    if (!stripeSecret) return NextResponse.json({ error: "Key missing" }, { status: 500 });
+    if (!stripeSecret) return NextResponse.json({ error: "Stripe Secret Key missing" }, { status: 500 });
 
     const stripe = new Stripe(String(stripeSecret).trim(), {
       apiVersion: "2024-06-20",
@@ -15,40 +15,51 @@ export async function POST(request: Request) {
     });
 
     const body = await request.json();
-    const { items, customerDetails, orderId, appliedPromoCode } = body;
+    const { items, customerDetails, orderId } = body;
 
-    // 1. SECURELY CALCULATE TOTAL WEIGHT ON THE SERVER
     let totalWeight = 0;
     let subtotal = 0;
 
+    // Loop through cart items
     items.forEach((item: any) => {
-      let itemWeight = item.weight || 0;
+      let itemWeight = Number(item.weight) || 0;
+      
+      // BULLETPROOF SIZE CHECK: Do not assume it's an array, try to parse it.
       if (item.size && item.sizes) {
-        const sizeObj = item.sizes.find((s: any) => s.name === item.size);
-        if (sizeObj && sizeObj.weight) itemWeight = sizeObj.weight;
+        try {
+          // If it's a string, parse it. If it's already an array, keep it.
+          const parsedSizes = typeof item.sizes === "string" ? JSON.parse(item.sizes) : item.sizes;
+          
+          if (Array.isArray(parsedSizes)) {
+            // Find the selected size
+            const matchedSize = parsedSizes.find((s: any) => s.name === item.size || s.size === item.size);
+            if (matchedSize && matchedSize.weight !== undefined) {
+              itemWeight = Number(matchedSize.weight);
+            }
+          }
+        } catch (error) {
+          // If parsing fails, just ignore and use the base weight
+          console.log("Could not parse sizes for item:", item.title);
+        }
       }
+      
       totalWeight += itemWeight * item.qty;
       
-      // Calculate subtotal securely
-      const itemPrice = typeof item.price === "number" ? item.price : parseInt(String(item.price).replace(/[^0-9]/g, ""), 10);
+      // Calculate subtotal
+      const itemPrice = typeof item.price === "number" ? item.price : parseInt(String(item.price).replace(/[^0-9.]/g, ""), 10) || 0;
       subtotal += itemPrice * item.qty;
     });
 
-    // 2. CALCULATE SHIPPING SECURELY
+    // Calculate shipping based on weight
     let shipping = 0;
     if (totalWeight > 0) {
       if (totalWeight <= 2) shipping = 4.80;
       else if (totalWeight <= 20) shipping = 7.50;
-      else shipping = 7.50; // Over 20kg fallback
+      else shipping = 7.50;
     }
 
-    // 3. CALCULATE PROMO (Optional: You should also verify the promo code in your DB securely here)
-    // For now, we assume the frontend sends the right discount, but ideally, you fetch the promo from D1 here.
-    let discountAmount = 0; 
-    // (If you have a promo DB, check appliedPromoCode here and set discountAmount)
-
-    // 4. CALCULATE FINAL TOTAL
-    const baseAmount = Math.max(0, subtotal + shipping - discountAmount);
+    // Calculate total
+    const baseAmount = Math.max(0, subtotal + shipping);
     const feePercentage = 0.015;
     const fixedFee = 0.20;
     const processingFee = Number((baseAmount * feePercentage + fixedFee).toFixed(2));
@@ -62,7 +73,7 @@ export async function POST(request: Request) {
           currency: "gbp",
           product_data: {
             name: "Mocktopia Order",
-            description: `Order ID: ${orderId} | Weight: ${totalWeight.toFixed(2)}kg`,
+            description: `Order ID: ${orderId} | Est. Weight: ${totalWeight.toFixed(2)}kg`,
           },
           unit_amount: finalAmountInPence,
         },
@@ -70,7 +81,7 @@ export async function POST(request: Request) {
       }
     ];
 
-    const baseUrl = "https://moctop.boluwatifedaniel2009.workers.dev";
+    const baseUrl = "https://mocktopiatreats.com";
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -86,6 +97,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Stripe Backend Error:", error);
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }
