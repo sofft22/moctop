@@ -7,7 +7,6 @@ import Image from "next/image";
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
   
-  const [settings, setSettings] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form State
@@ -26,10 +25,8 @@ export default function CheckoutPage() {
   const [checkingPromo, setCheckingPromo] = useState(false);
 
   useEffect(() => {
-    fetch("/api/settings").then(res => res.json()).then(data => {
-      setSettings(data);
-    });
-
+    // Only load saved customer details from localStorage. 
+    // The slow /api/settings fetch has been removed.
     const saved = localStorage.getItem("mocktopia_customer_details");
     if (saved) {
       const parsed = JSON.parse(saved);
@@ -44,9 +41,8 @@ export default function CheckoutPage() {
 
   // --- FIXED: Calculate Total Weight Safely ---
   const totalWeight = cart.reduce((total: number, item: any) => {
-    let itemWeight = item.weight || 0;
+    let itemWeight = Number(item.weight) || 0;
     
-    // Safely check if sizes exists and is an array (or parse it if it's a string)
     if (item.size && item.sizes) {
       let sizesArray: any[] = [];
       try {
@@ -57,7 +53,7 @@ export default function CheckoutPage() {
 
       if (Array.isArray(sizesArray)) {
         const sizeObj = sizesArray.find((s: any) => s.name === item.size || s.size === item.size);
-        if (sizeObj && sizeObj.weight) {
+        if (sizeObj && sizeObj.weight !== undefined) {
           itemWeight = Number(sizeObj.weight);
         }
       }
@@ -130,7 +126,7 @@ export default function CheckoutPage() {
 
     const orderId = `MCK-${Math.floor(1000 + Math.random() * 9000)}`;
     
-    // Format items for local storage (optional)
+    // Format items for local storage
     const items = cart.map((item: any) => ({
       id: item.id,
       title: item.title,
@@ -214,7 +210,8 @@ export default function CheckoutPage() {
               return (
                 <div key={item.cartId} className="flex items-center gap-4">
                   <div className="relative h-14 w-12 shrink-0 overflow-hidden rounded-md bg-[#EBE0D3]">
-                    <Image src={item.image} alt={item.title} fill className="object-cover" />
+                    {/* ADDED unoptimized={true} TO FIX SLOW LOADING */}
+                    <Image src={item.image} alt={item.title} fill className="object-cover" unoptimized={true} />
                   </div>
                   <div className="flex-1">
                     <p className="text-[13px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{item.title}</p>
@@ -245,7 +242,6 @@ export default function CheckoutPage() {
 
           <div className="flex justify-between text-[13px] text-[#2C1A1D]/60 mb-2"><span>Subtotal</span><span>£{cartTotal.toLocaleString()}</span></div>
           
-          {/* Weight & Shipping Display */}
           <div className="flex justify-between text-[13px] text-[#2C1A1D]/60 mb-2">
             <span>Delivery (Est. Weight: {totalWeight.toFixed(2)}kg)</span>
             <span>£{shipping.toFixed(2)}</span>
