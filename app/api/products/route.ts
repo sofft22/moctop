@@ -4,14 +4,12 @@ import { products } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-// Tell Next.js to cache the GET request at the edge
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 export async function GET() {
   const db = getDb();
   
-  // Optimized Select: Only fetch what the grid needs
   const allProducts = await db.select({
     id: products.id,
     title: products.title,
@@ -22,9 +20,9 @@ export async function GET() {
     sizes: products.sizes,
     featured: products.featured,
     isBulk: products.isBulk,
+    weight: products.weight, // <-- NEW: Fetch weight
   }).from(products);
 
-  // Return with Cache-Control headers to make it load instantly
   return NextResponse.json(allProducts, {
     headers: {
       "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
@@ -48,6 +46,7 @@ export async function POST(request: Request) {
     inStock: body.inStock ? 1 : 0,
     featured: body.featured ? 1 : 0,
     isBulk: body.isBulk ? 1 : 0,
+    weight: body.weight || 0, // <-- NEW: Save weight
   });
 
   revalidatePath("/", "layout");
@@ -72,6 +71,7 @@ export async function PUT(request: Request) {
       inStock: body.inStock ? 1 : 0,
       featured: body.featured ? 1 : 0,
       isBulk: body.isBulk ? 1 : 0,
+      weight: body.weight || 0, // <-- NEW: Update weight
     })
     .where(eq(products.id, body.id));
 
