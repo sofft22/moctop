@@ -4,11 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-interface Zone {
-  name: string;
-  price: number;
-}
-
 interface Topping {
   id: string;
   name: string;
@@ -22,12 +17,6 @@ export default function AdminSettingsPage() {
   // Separate save states for each section
   const [savedBanner, setSavedBanner] = useState(false);
   const [savedBox, setSavedBox] = useState(false);
-  const [savedZones, setSavedZones] = useState(false);
-
-  // Delivery Zones State
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [newZoneName, setNewZoneName] = useState("");
-  const [newZonePrice, setNewZonePrice] = useState("");
 
   // Banner State
   const [bannerText, setBannerText] = useState("");
@@ -53,9 +42,6 @@ export default function AdminSettingsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data) {
-          if (data.deliveryZones) {
-            try { setZones(JSON.parse(data.deliveryZones)); } catch (e) {}
-          }
           setBannerText(data.bannerText || "");
           setBannerActive(data.bannerActive === 1);
           
@@ -67,17 +53,6 @@ export default function AdminSettingsPage() {
       })
       .catch(() => setLoading(false));
   }, [router]);
-
-  const addZone = () => {
-    if (!newZoneName || !newZonePrice) return;
-    setZones([...zones, { name: newZoneName, price: Number(newZonePrice) }]);
-    setNewZoneName("");
-    setNewZonePrice("");
-  };
-
-  const removeZone = (index: number) => {
-    setZones(zones.filter((_, i) => i !== index));
-  };
 
   const handleToppingUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,16 +106,6 @@ export default function AdminSettingsPage() {
     });
     setSavedBox(true);
     setTimeout(() => setSavedBox(false), 3000);
-  };
-
-  const saveZones = async () => {
-    await fetch("/api/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deliveryZones: JSON.stringify(zones) }),
-    });
-    setSavedZones(true);
-    setTimeout(() => setSavedZones(false), 3000);
   };
 
   if (loading) return <div className="flex justify-center py-24 min-h-screen bg-[#FBF9F5]"><div className="h-6 w-6 animate-spin rounded-full border-[2.5px] border-[#2C1A1D]/20 border-t-[#2C1A1D]" /></div>;
@@ -215,33 +180,6 @@ export default function AdminSettingsPage() {
           <div className="flex justify-end pt-4 mt-4 border-t border-[#2C1A1D]/10">
             <button onClick={saveBanner} className="rounded-md bg-[#2C1A1D] px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-[#FBF9F5] hover:bg-[#1F1315]">
               {savedBanner ? "Saved ✓" : "Save Banner"}
-            </button>
-          </div>
-        </div>
-
-        {/* DELIVERY ZONES */}
-        <div className="rounded-lg border border-[#2C1A1D]/10 bg-white p-6 shadow-sm">
-          <h2 className="mb-5 text-[14px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Delivery Locations</h2>
-          <div className="flex flex-col gap-3 mb-6">
-            {zones.map((zone, i) => (
-              <div key={i} className="flex items-center justify-between bg-[#FBF9F5] p-3 rounded-md border border-[#2C1A1D]/10">
-                <span className="text-[14px] font-medium text-[#2C1A1D]">{zone.name}</span>
-                <div className="flex items-center gap-4">
-                  <span className="text-[14px] font-bold text-[#2C1A1D]">£{zone.price.toFixed(2)}</span>
-                  <button type="button" onClick={() => removeZone(i)} className="text-red-500 text-sm hover:text-red-700 transition-colors">✕</button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end border-t border-[#2C1A1D]/10 pt-5">
-            <div><label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60">Location</label><input value={newZoneName} onChange={(e) => setNewZoneName(e.target.value)} type="text" placeholder="London" className="w-full rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" /></div>
-            <div><label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60">Price (£)</label><input value={newZonePrice} onChange={(e) => setNewZonePrice(e.target.value)} type="number" step="0.01" placeholder="5.00" className="w-full rounded-md border border-[#2C1A1D]/20 bg-[#FBF9F5] px-4 py-3 text-[14px] outline-none focus:border-[#2C1A1D]" /></div>
-            <button type="button" onClick={addZone} className="w-full rounded-md bg-[#EBE0D3] py-3 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#DCD0C2]">Add Zone</button>
-          </div>
-          
-          <div className="flex justify-end pt-4 mt-4 border-t border-[#2C1A1D]/10">
-            <button onClick={saveZones} className="rounded-md bg-[#2C1A1D] px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-[#FBF9F5] hover:bg-[#1F1315]">
-              {savedZones ? "Saved ✓" : "Save Delivery Zones"}
             </button>
           </div>
         </div>
