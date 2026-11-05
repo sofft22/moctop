@@ -42,23 +42,31 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  // --- NEW: Calculate Total Weight ---
+  // --- FIXED: Calculate Total Weight Safely ---
   const totalWeight = cart.reduce((total: number, item: any) => {
-    // 1. If the item has a weight property, use it.
-    // 2. If the size has a weight property inside the sizes array, use it.
-    // 3. Otherwise, default to 0 (to avoid errors if old products don't have weight yet).
     let itemWeight = item.weight || 0;
     
+    // Safely check if sizes exists and is an array (or parse it if it's a string)
     if (item.size && item.sizes) {
-      const sizeObj = item.sizes.find((s: any) => s.name === item.size);
-      if (sizeObj && sizeObj.weight) {
-        itemWeight = sizeObj.weight;
+      let sizesArray: any[] = [];
+      try {
+        sizesArray = typeof item.sizes === "string" ? JSON.parse(item.sizes) : item.sizes;
+      } catch (e) {
+        sizesArray = [];
+      }
+
+      if (Array.isArray(sizesArray)) {
+        const sizeObj = sizesArray.find((s: any) => s.name === item.size || s.size === item.size);
+        if (sizeObj && sizeObj.weight) {
+          itemWeight = Number(sizeObj.weight);
+        }
       }
     }
+    
     return total + (itemWeight * item.qty);
   }, 0);
 
-  // --- NEW: Calculate Shipping based on Weight ---
+  // --- Calculate Shipping based on Weight ---
   let shipping = 0;
   if (totalWeight > 0) {
     if (totalWeight <= 2) {
@@ -66,7 +74,7 @@ export default function CheckoutPage() {
     } else if (totalWeight <= 20) {
       shipping = 7.50;
     } else {
-      shipping = 7.50; // Fallback for over 20kg (or you can block checkout)
+      shipping = 7.50; // Fallback for over 20kg
     }
   }
 
@@ -121,6 +129,8 @@ export default function CheckoutPage() {
     }
 
     const orderId = `MCK-${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    // Format items for local storage (optional)
     const items = cart.map((item: any) => ({
       id: item.id,
       title: item.title,
@@ -128,7 +138,7 @@ export default function CheckoutPage() {
       qty: item.qty,
       size: item.size,
       image: item.image,
-      weight: item.weight // Include weight just in case
+      weight: item.weight
     }));
 
     localStorage.setItem(`pending_order_${orderId}`, JSON.stringify({
@@ -152,14 +162,14 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: cart, // SEND FULL CART (So backend can calculate weight securely)
+          items: cart, // SEND FULL CART
           customerDetails: { 
             email: email || "no-email@example.com", 
             customerName: `${firstName} ${lastName}`, 
             phone 
           },
           orderId: orderId,
-          appliedPromoCode: appliedPromo ? appliedPromo.code : null, // Send promo to backend
+          appliedPromoCode: appliedPromo ? appliedPromo.code : null,
         }),
       });
 
