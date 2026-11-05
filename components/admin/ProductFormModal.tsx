@@ -12,6 +12,9 @@ interface Props {
 export function ProductFormModal({ product, onClose, onSave }: Props) {
   const [title, setTitle] = useState(product?.title || "");
   const [price, setPrice] = useState(product?.price?.toString() || "");
+  // NEW: Base Weight State
+  const [weight, setWeight] = useState(product?.weight?.toString() || ""); 
+  
   const [description, setDescription] = useState(product?.description || "");
   const [category, setCategory] = useState(product?.category || "banana-bread");
   
@@ -19,9 +22,9 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
   const [featured, setFeatured] = useState(product ? product.featured === 1 : true);
   const [isBulk, setIsBulk] = useState(product ? product.isBulk === 1 : true);
   
-  // CHANGED: Sizes state now holds objects with size name and price
-  const [sizes, setSizes] = useState<{ size: string; price: string }[]>(() => {
-    if (!product || !product.sizes) return [{ size: "", price: "" }];
+  // CHANGED: Sizes state now holds objects with size name, price, AND weight
+  const [sizes, setSizes] = useState<{ size: string; price: string; weight: string }[]>(() => {
+    if (!product || !product.sizes) return [{ size: "", price: "", weight: "" }];
     
     let parsedSizes: any[] = [];
     if (Array.isArray(product.sizes)) {
@@ -33,12 +36,16 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
       } catch (e) {}
     }
 
-    if (parsedSizes.length === 0) return [{ size: "", price: "" }];
+    if (parsedSizes.length === 0) return [{ size: "", price: "", weight: "" }];
 
     // Map old string sizes to the new object format safely
     return parsedSizes.map((s: any) => {
-      if (typeof s === "string") return { size: s, price: "" };
-      return { size: s.size || "", price: s.price?.toString() || "" };
+      if (typeof s === "string") return { size: s, price: "", weight: "" };
+      return { 
+        size: s.size || "", 
+        price: s.price?.toString() || "", 
+        weight: s.weight?.toString() || "" 
+      };
     });
   });
   
@@ -107,18 +114,20 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
 
     setSaving(true);
     
-    // Clean sizes: Remove empty rows, ensure price is a number
+    // Clean sizes: Remove empty rows, ensure price/weight are numbers
     const cleanSizes = sizes
       .filter((s) => s.size.trim() !== "")
       .map((s) => ({
         size: s.size.trim(),
-        price: s.price ? Number(s.price) : Number(price) // fallback to base price if left empty
+        price: s.price ? Number(s.price) : Number(price), // fallback to base price if left empty
+        weight: s.weight ? Number(s.weight) : Number(weight) || 0 // fallback to base weight if left empty
       }));
 
     const payload = {
       id: product?.id,
       title: title.trim(),
       price: Number(price),
+      weight: weight ? Number(weight) : 0, // NEW: Send base weight
       description: description.trim(),
       category,
       inStock,
@@ -180,19 +189,26 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
             <input value={title} onChange={e => setTitle(e.target.value)} type="text" placeholder="e.g. Choc Chip Banana Bread" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
           </div>
 
+          {/* BASE PRICE & BASE WEIGHT */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Base Price (£)</label>
               <input value={price} onChange={e => setPrice(e.target.value)} type="number" placeholder="6.50" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
             </div>
             <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Category</label>
-              <select value={category} onChange={e => setCategory(e.target.value)} className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                <option value="banana-bread">Banana Bread</option>
-                <option value="puff-puffs">Puff Puffs</option>
-                <option value="mocktails">Mocktails</option>
-              </select>
+              {/* NEW BASE WEIGHT INPUT */}
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Base Weight (kg)</label>
+              <input value={weight} onChange={e => setWeight(e.target.value)} type="number" step="0.01" placeholder="e.g. 0.5" className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Category</label>
+            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+              <option value="banana-bread">Banana Bread</option>
+              <option value="puff-puffs">Puff Puffs</option>
+              <option value="mocktails">Mocktails</option>
+            </select>
           </div>
 
           <div>
@@ -200,7 +216,7 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Tell the customer why they need this..." className="w-full resize-none rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[14px] text-[#2C1A1D] outline-none focus:border-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }} />
           </div>
 
-          {/* SIZES / OPTIONS - WITH SEPARATE PRICES */}
+          {/* SIZES / OPTIONS - WITH SEPARATE PRICES & WEIGHTS */}
           <div>
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/60" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Sizes / Options</label>
             <div className="flex flex-col gap-3">
@@ -227,11 +243,23 @@ export function ProductFormModal({ product, onClose, onSave }: Props) {
                       style={{ fontFamily: "var(--font-inter), sans-serif" }} 
                     />
                   </div>
+                  {/* NEW: Weight for this size */}
+                  <div className="relative w-[90px]">
+                    <input 
+                      value={option.weight} 
+                      onChange={e => { const n = [...sizes]; n[i].weight = e.target.value; setSizes(n); }} 
+                      type="number" 
+                      step="0.01"
+                      placeholder="kg" 
+                      className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-3 py-2 text-[13px] outline-none focus:border-[#2C1A1D]" 
+                      style={{ fontFamily: "var(--font-inter), sans-serif" }} 
+                    />
+                  </div>
                   {/* Remove Button */}
                   <button onClick={() => setSizes(sizes.filter((_, idx) => idx !== i))} className="text-[#2C1A1D]/40 hover:text-red-500 px-2">✕</button>
                 </div>
               ))}
-              <button onClick={() => setSizes([...sizes, { size: "", price: "" }])} className="text-[12px] font-bold uppercase tracking-wider text-[#2C1A1D] text-left mt-2 hover:underline">+ Add Option</button>
+              <button onClick={() => setSizes([...sizes, { size: "", price: "", weight: "" }])} className="text-[12px] font-bold uppercase tracking-wider text-[#2C1A1D] text-left mt-2 hover:underline">+ Add Option</button>
             </div>
           </div>
 
