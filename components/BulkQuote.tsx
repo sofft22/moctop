@@ -8,7 +8,12 @@ export function BulkQuote() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting bulk quote for:", guests, "guests");
+
+    const message = encodeURIComponent(
+      `Hi Mocktopia, I'd like to request a bulk/catering quote for ${guests} guests.`
+    );
+
+    window.open(`https://wa.me/447393157901?text=${message}`, "_blank", "noopener,noreferrer");
   };
 
   return (
