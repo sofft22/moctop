@@ -10,6 +10,9 @@ export interface CartItem {
   image: string;
   size: string;
   qty: number;
+  weight?: number;        // <--- ADDED
+  sizes?: any;            // <--- ADDED
+  isCustomBox?: boolean;  // <--- ADDED
 }
 
 interface CartContextType {
@@ -55,11 +58,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: any, size: string, qty: number) => {
     setCart((prevCart) => {
+      // Don't stack custom boxes, always treat them as a new unique item
+      const isCustom = product.isCustomBox;
+      
       const existingItem = prevCart.find(
-        (item) => item.id === product.id && item.size === size
+        (item) => item.id === product.id && item.size === size && !isCustom
       );
 
-      if (existingItem) {
+      if (existingItem && !isCustom) {
         return prevCart.map((item) =>
           item.id === product.id && item.size === size
             ? { ...item, qty: item.qty + qty }
@@ -70,10 +76,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [
         ...prevCart,
         {
-          ...product,
-          cartId: `${product.id}-${size}-${Date.now()}`,
-          size,
+          ...product, // <--- THIS SAVES EVERYTHING (weight, isCustomBox, etc.)
+          cartId: `${product.id}-${size}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          size: size || product.size,
           qty,
+          weight: product.weight || 0, // Explicitly ensure weight is there
         },
       ];
     });
@@ -89,7 +96,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("mocktopia_cart");
   };
 
-  const cartTotal = cart.reduce((total, item) => total + item.price * item.qty, 0);
+  const cartTotal = cart.reduce((total, item) => total + (Number(item.price) || 0) * item.qty, 0);
   const cartCount = cart.reduce((count, item) => count + item.qty, 0);
 
   return (
