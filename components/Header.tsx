@@ -16,8 +16,10 @@ export function Header() {
   }
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false); // For mobile accordion
-  const [desktopCategoriesOpen, setDesktopCategoriesOpen] = useState(false); // For desktop hover
+  // NEW STATE: Tracks if the user clicked into the Categories sub-menu on mobile
+  const [mobileSubMenuOpen, setMobileSubMenuOpen] = useState(false); 
+  const [desktopCategoriesOpen, setDesktopCategoriesOpen] = useState(false); 
+  
   const [scrolled, setScrolled] = useState(0);
   const [hidden, setHidden] = useState(false);
   const [heroHeight, setHeroHeight] = useState(0); 
@@ -35,7 +37,7 @@ export function Header() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
-    setMobileCategoriesOpen(false);
+    setMobileSubMenuOpen(false); // Reset submenu when route changes
   }, [pathname]);
 
   // FETCH BANNER DATA
@@ -96,16 +98,15 @@ export function Header() {
   const overHero = heroHeight > 0 && scrolled < heroHeight - 40; 
   const textClass = overHero ? 'text-white' : 'text-[#2C1A1D]';
 
-  // UPDATED NAV WITH CATEGORIES DROPDOWN
   const NAV = [
     { label: 'Signature Treats', targetId: 'signature-treats' },
     { 
       label: 'Categories', 
       targetId: 'categories',
       dropdown: [
-        { label: 'Banana Bread', href: '/shop?category=banana-bread' },
-        { label: 'Puff Puffs', href: '/shop?category=puff-puffs' },
-        { label: 'Mocktails', href: '/shop?category=mocktails' },
+        { label: 'Banana Bread', href: '/shop?category=banana-bread', img: "/banana-bread.png" },
+        { label: 'Puff Puffs', href: '/shop?category=puff-puffs', img: "/puff-puffs.png" },
+        { label: 'Mocktails', href: '/shop?category=mocktails', img: "/mocktail.png" },
       ]
     },
     { label: 'Shop', href: '/shop' },
@@ -116,7 +117,7 @@ export function Header() {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: any) => {
     if (item.href) return;
-    if (item.dropdown) return; // Don't scroll if it's the categories dropdown
+    if (item.dropdown) return; 
     
     e.preventDefault();
     setMobileMenuOpen(false);
@@ -138,7 +139,6 @@ export function Header() {
     }
   };
 
-  // ONLY SHOW BANNER ON HOME AND SHOP PAGE
   const showBanner = bannerActive && !isBannerClosed && (pathname === "/" || pathname === "/shop");
 
   return (
@@ -155,15 +155,11 @@ export function Header() {
         {/* ANNOUNCEMENT BANNER (STACKED ON TOP) */}
         {showBanner && (
           <div className={`w-full flex h-[32px] items-center justify-center relative overflow-hidden transition-colors duration-300 ${overHero ? 'text-white' : 'text-[#2C1A1D]'}`}>
-            
-            {/* Fixed Speaker Icon */}
             <div className="flex-shrink-0 px-4 z-10">
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
               </svg>
             </div>
-
-            {/* Moving Text */}
             <div className="flex-1 overflow-hidden relative h-full flex items-center">
               <div className="animate-marquee whitespace-nowrap absolute flex">
                 <span className="mx-4 text-[10px] font-bold uppercase tracking-[0.15em]">{bannerText}</span>
@@ -172,20 +168,15 @@ export function Header() {
                 <span className="mx-4 text-[10px] font-bold uppercase tracking-[0.15em]">{bannerText}</span>
               </div>
             </div>
-
-            {/* Close Button */}
             <button onClick={() => setIsBannerClosed(true)} className="flex-shrink-0 px-4 opacity-50 hover:opacity-100 z-10 transition-opacity">
               <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
-            
-            {/* Subtle divider inside the header */}
             {!overHero && <div className="absolute bottom-0 left-0 w-full h-[1px] bg-[#2C1A1D]/10" />}
           </div>
         )}
 
         {/* DESKTOP LAYOUT */}
         <div className="mx-auto hidden h-[72px] w-full max-w-7xl grid-cols-3 items-center px-8 lg:grid">
-          
           <div className="flex justify-start">
             <Link href="/" className="flex items-center">
               <span
@@ -201,7 +192,7 @@ export function Header() {
             {NAV.map((item) => (
               <div 
                 key={item.label} 
-                className="relative group"
+                className="relative group h-full py-6 flex items-center"
                 onMouseEnter={() => item.dropdown && setDesktopCategoriesOpen(true)}
                 onMouseLeave={() => item.dropdown && setDesktopCategoriesOpen(false)}
               >
@@ -212,7 +203,6 @@ export function Header() {
                   style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                 >
                   {item.label}
-                  {/* Tiny chevron for categories */}
                   {item.dropdown && (
                     <svg className={`h-3 w-3 transition-transform duration-300 ${desktopCategoriesOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -222,7 +212,7 @@ export function Header() {
 
                 {/* DESKTOP DROPDOWN */}
                 {item.dropdown && (
-                  <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 w-48 flex-col gap-1 rounded-xl bg-white p-2 shadow-xl border border-[#2C1A1D]/10 transition-all duration-200 ${desktopCategoriesOpen ? 'opacity-100 translate-y-0 pointer-events-auto flex' : 'opacity-0 -translate-y-2 pointer-events-none hidden'}`}>
+                  <div className={`absolute top-[70px] left-1/2 -translate-x-1/2 w-48 flex-col gap-1 rounded-xl bg-white p-2 shadow-xl border border-[#2C1A1D]/10 transition-all duration-200 ${desktopCategoriesOpen ? 'opacity-100 translate-y-0 pointer-events-auto flex' : 'opacity-0 -translate-y-2 pointer-events-none hidden'}`}>
                     {item.dropdown.map((sub) => (
                       <Link
                         key={sub.label}
@@ -250,11 +240,7 @@ export function Header() {
                 <path d="M9 8V6a3 3 0 016 0v2" />
               </svg>
               {cartCount > 0 && (
-                <span
-                  className={`absolute -right-0.5 -top-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold leading-none transition-colors duration-300 ${
-                    overHero ? 'bg-white text-black' : 'bg-[#2C1A1D] text-white'
-                  }`}
-                >
+                <span className={`absolute -right-0.5 -top-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold leading-none transition-colors duration-300 ${overHero ? 'bg-white text-black' : 'bg-[#2C1A1D] text-white'}`}>
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
@@ -262,7 +248,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* MOBILE LAYOUT */}
+        {/* MOBILE HEADER BAR */}
         <div className="mx-auto flex h-[56px] w-full max-w-7xl items-center justify-between px-5 lg:hidden">
           <div className="flex w-16 items-center justify-start">
             <button
@@ -304,11 +290,7 @@ export function Header() {
                 <path d="M9 8V6a3 3 0 016 0v2" />
               </svg>
               {cartCount > 0 && (
-                <span
-                  className={`absolute -right-0.5 -top-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold leading-none transition-colors duration-300 ${
-                    overHero ? 'bg-white text-black' : 'bg-[#2C1A1D] text-white'
-                  }`}
-                >
+                <span className={`absolute -right-0.5 -top-0.5 flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[9.5px] font-bold leading-none transition-colors duration-300 ${overHero ? 'bg-white text-black' : 'bg-[#2C1A1D] text-white'}`}>
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
@@ -316,50 +298,32 @@ export function Header() {
           </div>
         </div>
 
-        {/* BOXED MOBILE DROPDOWN MENU */}
+        {/* HIGH-END MOBILE DROPDOWN MENU */}
         <div 
-          className={`absolute top-[56px] left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
-            mobileMenuOpen ? 'max-h-[500px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
+          className={`absolute left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
+            mobileMenuOpen ? 'max-h-[85vh] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
           } ${showBanner ? 'top-[88px]' : 'top-[56px]'}`}
         >
-          <nav className="flex flex-col p-2">
+          {/* MAIN MENU LEVEL */}
+          <div className={`flex flex-col p-2 transition-transform duration-300 ${mobileSubMenuOpen ? '-translate-x-full opacity-0 absolute inset-0 pointer-events-none' : 'translate-x-0 opacity-100 relative'}`}>
             {NAV.map((item) => (
-              <div key={item.label} className="flex flex-col">
+              <div key={item.label}>
                 {item.dropdown ? (
-                  <>
-                    <button
-                      onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
-                      className="flex items-center justify-between rounded-xl px-4 py-4 text-[13px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5 w-full text-left"
-                      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-                    >
-                      {item.label}
-                      <svg className={`h-4 w-4 transition-transform duration-300 ${mobileCategoriesOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    
-                    {/* MOBILE SUB-CATEGORIES */}
-                    <div className={`overflow-hidden transition-all duration-300 ${mobileCategoriesOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
-                      <div className="flex flex-col gap-1 px-4 pb-4">
-                        {item.dropdown.map((sub) => (
-                          <Link
-                            key={sub.label}
-                            href={sub.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="rounded-lg bg-[#2C1A1D]/5 px-4 py-3 text-[12px] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/10"
-                            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-                          >
-                            {sub.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </>
+                  <button
+                    onClick={() => setMobileSubMenuOpen(true)}
+                    className="flex items-center justify-between rounded-xl px-4 py-4 text-[14px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5 w-full text-left font-medium"
+                    style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                  >
+                    {item.label}
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 ) : (
                   <Link
                     href={item.href || `/#${item.targetId}`}
                     onClick={(e) => handleNavClick(e, item)}
-                    className="flex items-center justify-between rounded-xl px-4 py-4 text-[13px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5"
+                    className="flex items-center justify-between rounded-xl px-4 py-4 text-[14px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5 font-medium"
                     style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                   >
                     {item.label}
@@ -367,13 +331,40 @@ export function Header() {
                 )}
               </div>
             ))}
-          </nav>
+          </div>
+
+          {/* SUB-MENU LEVEL (CATEGORIES) */}
+          <div className={`flex flex-col p-4 bg-white transition-transform duration-300 ${mobileSubMenuOpen ? 'translate-x-0 opacity-100 relative' : 'translate-x-full opacity-0 absolute inset-0 pointer-events-none'}`}>
+            <div className="flex items-center mb-6 pb-4 border-b border-[#2C1A1D]/10">
+              <button onClick={() => setMobileSubMenuOpen(false)} className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              {NAV.find(n => n.label === 'Categories')?.dropdown?.map((sub) => (
+                <Link
+                  key={sub.label}
+                  href={sub.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="group relative flex items-center h-[80px] overflow-hidden rounded-xl bg-[#FBF9F5] px-6 transition-all hover:bg-[#EBE0D3]"
+                >
+                  <span className="relative z-10 text-[18px] font-medium text-[#2C1A1D]" style={{ fontFamily: 'var(--font-dm-serif), serif' }}>
+                    {sub.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </header>
       
       {/* MOBILE OVERLAY */}
       <div 
-        className={`fixed inset-0 z-30 bg-black/20 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-30 bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setMobileMenuOpen(false)} 
