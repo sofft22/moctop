@@ -17,7 +17,13 @@ export function BoxBuilderModal({ config, onClose }: Props) {
 
   const price6 = config.price6 || config.price || 20;
   const price8 = config.price8 || (config.price ? config.price + 5 : 25);
+  
+  // NEW: Get the correct weight based on the selected box size
+  const weight6 = config.weight6 || 0.5;
+  const weight8 = config.weight8 || 0.7;
+
   const currentPrice = selectedSlots === 6 ? price6 : price8; 
+  const currentWeight = selectedSlots === 6 ? weight6 : weight8; // <--- NEW
 
   const totalSelected = Object.values(selectedToppings).reduce((a, b) => a + b, 0);
   const isComplete = totalSelected === selectedSlots;
@@ -58,6 +64,7 @@ export function BoxBuilderModal({ config, onClose }: Props) {
       id: `box-${Date.now()}`,
       title: config.title,
       price: currentPrice,
+      weight: currentWeight, // <--- NEW: Pass the weight to the cart!
       image: config.toppings[0]?.image || "/placeholder.png",
       size: `Box of ${selectedSlots} (${selectionDetails})`,
     };
