@@ -8,7 +8,7 @@ export function TrustBanner() {
         </svg>
       ),
       title: "12 NOON CUT-OFF",
-      subtitle: "Order before 12pm for next-day delivery."
+      subtitle: "Order before 12pm aims to be  sent out next day"
     },
     {
       icon: (
