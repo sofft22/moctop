@@ -3,6 +3,7 @@
 export function BoxBuilderSection() {
   
   const handleBulkOrder = () => {
+    // Changed the number here to 2348178910628
     const message = `Hi Mocktopia! I'd like to request a bulk order for an upcoming event.%0A%0A*Event Type:* %0A*Number of Guests:* %0A*Date Needed:* %0A%0APlease let me know the pricing and availability.`;
     window.open(`https://wa.me/2348178910628?text=${message}`, '_blank');
   };
