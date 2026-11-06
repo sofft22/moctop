@@ -1,9 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 export function BoxBuilderSection() {
-  
+  // State to hold the current image index
+  const [currentImage, setCurrentImage] = useState(0);
+
+  // Array of images to shuffle between
+  const images = [
+    "/box-builder-home.png", 
+    "/box-builder-home-2.png" // <-- Add your second image here
+  ];
+
+  // Effect to change the image every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % images.length);
+    }, 3000);
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(interval);
+  }, [images.length]);
+
   const handleBulkOrder = () => {
-    // Changed the number here to 2348178910628
     const message = `Hi Mocktopia! I'd like to request a bulk order for an upcoming event.%0A%0A*Event Type:* %0A*Number of Guests:* %0A*Date Needed:* %0A%0APlease let me know the pricing and availability.`;
     window.open(`https://wa.me/2348178910628?text=${message}`, '_blank');
   };
@@ -11,23 +30,28 @@ export function BoxBuilderSection() {
   return (
     <section className="relative w-full py-24 md:py-32 px-6 md:px-12 border-y border-[#2C1A1D]/10 overflow-hidden flex items-center justify-center bg-[#2C1A1D]">
       
-      {/* BACKGROUND IMAGE */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src="/box-builder-home.png" 
-          alt="Bulk Orders" 
-          className="w-full h-full object-cover object-center" 
-        />
+      {/* BACKGROUND IMAGES - SHUFFLING */}
+      <div className="absolute inset-0 z-0 bg-[#2C1A1D]">
+        {images.map((src, index) => (
+          <img 
+            key={src}
+            src={src} 
+            alt="Bulk Orders" 
+            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out ${
+              index === currentImage ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
       </div>
 
       {/* SUBTLE DARK OVERLAY (Makes the text readable) */}
-      <div className="absolute inset-0 z-10 bg-black/50" />
+      <div className="absolute inset-0 z-10 bg-black/60" />
 
       {/* CONTENT */}
       <div className="relative z-20 mx-auto max-w-[800px] flex flex-col items-center text-center">
         
         <h2 className="text-[40px] md:text-[64px] text-[#FBF9F5] leading-[1.1] mb-10" style={{ fontFamily: "var(--font-dm-serif), serif" }}>
-          Planning an event?<br />Let us bake for you.
+          Planning an event?<br />Let's cater for you.
         </h2>
         
         <button 
