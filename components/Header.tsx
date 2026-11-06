@@ -16,6 +16,8 @@ export function Header() {
   }
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false); // For mobile accordion
+  const [desktopCategoriesOpen, setDesktopCategoriesOpen] = useState(false); // For desktop hover
   const [scrolled, setScrolled] = useState(0);
   const [hidden, setHidden] = useState(false);
   const [heroHeight, setHeroHeight] = useState(0); 
@@ -33,6 +35,7 @@ export function Header() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setMobileCategoriesOpen(false);
   }, [pathname]);
 
   // FETCH BANNER DATA
@@ -93,9 +96,18 @@ export function Header() {
   const overHero = heroHeight > 0 && scrolled < heroHeight - 40; 
   const textClass = overHero ? 'text-white' : 'text-[#2C1A1D]';
 
+  // UPDATED NAV WITH CATEGORIES DROPDOWN
   const NAV = [
     { label: 'Signature Treats', targetId: 'signature-treats' },
-    { label: 'Categories', targetId: 'categories' },
+    { 
+      label: 'Categories', 
+      targetId: 'categories',
+      dropdown: [
+        { label: 'Banana Bread', href: '/shop?category=banana-bread' },
+        { label: 'Puff Puffs', href: '/shop?category=puff-puffs' },
+        { label: 'Mocktails', href: '/shop?category=mocktails' },
+      ]
+    },
     { label: 'Shop', href: '/shop' },
     { label: 'My Orders', href: '/my-orders' },
     { label: 'About Us', targetId: 'about' },
@@ -104,6 +116,7 @@ export function Header() {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: any) => {
     if (item.href) return;
+    if (item.dropdown) return; // Don't scroll if it's the categories dropdown
     
     e.preventDefault();
     setMobileMenuOpen(false);
@@ -186,15 +199,43 @@ export function Header() {
 
           <nav className="flex items-center justify-center gap-7">
             {NAV.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href || `/#${item.targetId}`}
-                onClick={(e) => handleNavClick(e, item)}
-                className={`whitespace-nowrap text-[10px] font-normal tracking-[0.15em] uppercase transition-colors duration-300 hover:opacity-60 ${textClass}`}
-                style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+              <div 
+                key={item.label} 
+                className="relative group"
+                onMouseEnter={() => item.dropdown && setDesktopCategoriesOpen(true)}
+                onMouseLeave={() => item.dropdown && setDesktopCategoriesOpen(false)}
               >
-                {item.label}
-              </Link>
+                <Link
+                  href={item.href || `/#${item.targetId}`}
+                  onClick={(e) => handleNavClick(e, item)}
+                  className={`whitespace-nowrap text-[10px] font-normal tracking-[0.15em] uppercase transition-colors duration-300 hover:opacity-60 flex items-center gap-1 ${textClass}`}
+                  style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                >
+                  {item.label}
+                  {/* Tiny chevron for categories */}
+                  {item.dropdown && (
+                    <svg className={`h-3 w-3 transition-transform duration-300 ${desktopCategoriesOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </Link>
+
+                {/* DESKTOP DROPDOWN */}
+                {item.dropdown && (
+                  <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-4 w-48 flex-col gap-1 rounded-xl bg-white p-2 shadow-xl border border-[#2C1A1D]/10 transition-all duration-200 ${desktopCategoriesOpen ? 'opacity-100 translate-y-0 pointer-events-auto flex' : 'opacity-0 -translate-y-2 pointer-events-none hidden'}`}>
+                    {item.dropdown.map((sub) => (
+                      <Link
+                        key={sub.label}
+                        href={sub.href}
+                        className="rounded-lg px-4 py-2.5 text-[11px] font-medium text-[#2C1A1D] hover:bg-[#FBF9F5] transition-colors"
+                        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
@@ -278,20 +319,53 @@ export function Header() {
         {/* BOXED MOBILE DROPDOWN MENU */}
         <div 
           className={`absolute top-[56px] left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
-            mobileMenuOpen ? 'max-h-[400px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
-          } ${showBanner ? 'top-[88px]' : 'top-[56px]'}`} // Adjust top position if banner is visible
+            mobileMenuOpen ? 'max-h-[500px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
+          } ${showBanner ? 'top-[88px]' : 'top-[56px]'}`}
         >
           <nav className="flex flex-col p-2">
             {NAV.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href || `/#${item.targetId}`}
-                onClick={(e) => handleNavClick(e, item)}
-                className="flex items-center justify-between rounded-xl px-4 py-4 text-[13px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5"
-                style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-              >
-                {item.label}
-              </Link>
+              <div key={item.label} className="flex flex-col">
+                {item.dropdown ? (
+                  <>
+                    <button
+                      onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
+                      className="flex items-center justify-between rounded-xl px-4 py-4 text-[13px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5 w-full text-left"
+                      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                    >
+                      {item.label}
+                      <svg className={`h-4 w-4 transition-transform duration-300 ${mobileCategoriesOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {/* MOBILE SUB-CATEGORIES */}
+                    <div className={`overflow-hidden transition-all duration-300 ${mobileCategoriesOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className="flex flex-col gap-1 px-4 pb-4">
+                        {item.dropdown.map((sub) => (
+                          <Link
+                            key={sub.label}
+                            href={sub.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="rounded-lg bg-[#2C1A1D]/5 px-4 py-3 text-[12px] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/10"
+                            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                          >
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <Link
+                    href={item.href || `/#${item.targetId}`}
+                    onClick={(e) => handleNavClick(e, item)}
+                    className="flex items-center justify-between rounded-xl px-4 py-4 text-[13px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5"
+                    style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </div>
             ))}
           </nav>
         </div>
