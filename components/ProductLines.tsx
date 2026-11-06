@@ -83,7 +83,7 @@ export function ProductLines() {
                       className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2C1A1D]"
                       style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
                     >
-                      Shop Now
+                      Order Now
                     </span>
                     <span className="text-[#2C1A1D] transition-transform duration-300 group-hover:translate-x-1">
                       →
