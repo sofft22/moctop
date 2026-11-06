@@ -16,8 +16,7 @@ export function Header() {
   }
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // NEW STATE: Tracks if the user clicked into the Categories sub-menu on mobile
-  const [mobileSubMenuOpen, setMobileSubMenuOpen] = useState(false); 
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false); 
   const [desktopCategoriesOpen, setDesktopCategoriesOpen] = useState(false); 
   
   const [scrolled, setScrolled] = useState(0);
@@ -37,7 +36,7 @@ export function Header() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
-    setMobileSubMenuOpen(false); // Reset submenu when route changes
+    setMobileCategoriesOpen(false); 
   }, [pathname]);
 
   // FETCH BANNER DATA
@@ -104,9 +103,9 @@ export function Header() {
       label: 'Categories', 
       targetId: 'categories',
       dropdown: [
-        { label: 'Banana Bread', href: '/shop?category=banana-bread', img: "/banana-bread.png" },
-        { label: 'Puff Puffs', href: '/shop?category=puff-puffs', img: "/puff-puffs.png" },
-        { label: 'Mocktails', href: '/shop?category=mocktails', img: "/mocktail.png" },
+        { label: 'Banana Bread', href: '/shop?category=banana-bread' },
+        { label: 'Puff Puffs', href: '/shop?category=puff-puffs' },
+        { label: 'Mocktails', href: '/shop?category=mocktails' },
       ]
     },
     { label: 'Shop', href: '/shop' },
@@ -298,32 +297,50 @@ export function Header() {
           </div>
         </div>
 
-        {/* HIGH-END MOBILE DROPDOWN MENU */}
+        {/* CLEAN MOBILE DROPDOWN MENU */}
         <div 
-          className={`absolute left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
+          className={`absolute top-[56px] left-4 right-4 z-50 overflow-hidden rounded-2xl bg-[#FBF9F5] shadow-2xl transition-all duration-300 ease-in-out lg:hidden border border-[#2C1A1D]/10 ${
             mobileMenuOpen ? 'max-h-[85vh] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'
           } ${showBanner ? 'top-[88px]' : 'top-[56px]'}`}
         >
-          {/* MAIN MENU LEVEL */}
-          <div className={`flex flex-col p-2 transition-transform duration-300 ${mobileSubMenuOpen ? '-translate-x-full opacity-0 absolute inset-0 pointer-events-none' : 'translate-x-0 opacity-100 relative'}`}>
+          <nav className="flex flex-col p-2">
             {NAV.map((item) => (
-              <div key={item.label}>
+              <div key={item.label} className="flex flex-col">
                 {item.dropdown ? (
-                  <button
-                    onClick={() => setMobileSubMenuOpen(true)}
-                    className="flex items-center justify-between rounded-xl px-4 py-4 text-[14px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5 w-full text-left font-medium"
-                    style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-                  >
-                    {item.label}
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setMobileCategoriesOpen(!mobileCategoriesOpen)}
+                      className="flex items-center justify-between rounded-xl px-4 py-4 text-[13px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5 w-full text-left"
+                      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                    >
+                      {item.label}
+                      <svg className={`h-4 w-4 transition-transform duration-300 ${mobileCategoriesOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {/* CLEAN SLIDE DOWN SUB-CATEGORIES */}
+                    <div className={`overflow-hidden transition-all duration-300 ${mobileCategoriesOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className="flex flex-col ml-6 border-l border-[#2C1A1D]/10 pl-2 mb-2">
+                        {item.dropdown.map((sub) => (
+                          <Link
+                            key={sub.label}
+                            href={sub.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="rounded-lg px-4 py-3 text-[12px] font-medium text-[#2C1A1D]/70 transition-colors hover:text-[#2C1A1D] hover:bg-[#2C1A1D]/5"
+                            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+                          >
+                            {sub.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <Link
                     href={item.href || `/#${item.targetId}`}
                     onClick={(e) => handleNavClick(e, item)}
-                    className="flex items-center justify-between rounded-xl px-4 py-4 text-[14px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5 font-medium"
+                    className="flex items-center justify-between rounded-xl px-4 py-4 text-[13px] uppercase tracking-[0.1em] text-[#2C1A1D] transition-colors hover:bg-[#2C1A1D]/5"
                     style={{ fontFamily: 'var(--font-inter), sans-serif' }}
                   >
                     {item.label}
@@ -331,34 +348,7 @@ export function Header() {
                 )}
               </div>
             ))}
-          </div>
-
-          {/* SUB-MENU LEVEL (CATEGORIES) */}
-          <div className={`flex flex-col p-4 bg-white transition-transform duration-300 ${mobileSubMenuOpen ? 'translate-x-0 opacity-100 relative' : 'translate-x-full opacity-0 absolute inset-0 pointer-events-none'}`}>
-            <div className="flex items-center mb-6 pb-4 border-b border-[#2C1A1D]/10">
-              <button onClick={() => setMobileSubMenuOpen(false)} className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]/50 hover:text-[#2C1A1D]">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                Back
-              </button>
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              {NAV.find(n => n.label === 'Categories')?.dropdown?.map((sub) => (
-                <Link
-                  key={sub.label}
-                  href={sub.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="group relative flex items-center h-[80px] overflow-hidden rounded-xl bg-[#FBF9F5] px-6 transition-all hover:bg-[#EBE0D3]"
-                >
-                  <span className="relative z-10 text-[18px] font-medium text-[#2C1A1D]" style={{ fontFamily: 'var(--font-dm-serif), serif' }}>
-                    {sub.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          </nav>
         </div>
       </header>
       
