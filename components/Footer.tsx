@@ -103,7 +103,15 @@ export function Footer() {
             >
               TikTok
             </a>
-            <a href="#" className="text-[13px] text-white/70 hover:text-white transition-colors" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>WhatsApp</a>
+            <a 
+              href="https://wa.me/447393157901" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-[13px] text-white/70 hover:text-white transition-colors" 
+              style={{ fontFamily: 'var(--font-inter), sans-serif' }}
+            >
+              WhatsApp
+            </a>
           </div>
 
           {/* Column 4: Legal */}
