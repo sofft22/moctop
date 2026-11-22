@@ -35,6 +35,7 @@ export default function MyOrdersPage() {
 
           if (!dbOrder && !localOrder) return null;
 
+          // Prioritize the database order if it exists (so status is updated), fallback to local
           const base = dbOrder || localOrder;
           
           let safeStatus = base.status || "Pending";
@@ -46,11 +47,22 @@ export default function MyOrdersPage() {
             ? base.date 
             : new Date().toISOString();
 
+          // BULLETPROOF ITEMS EXTRACTION
+          let finalItems = [];
+          let rawItems = base.items || (localOrder ? localOrder.items : null);
+          
+          if (Array.isArray(rawItems)) {
+            finalItems = rawItems;
+          } else if (typeof rawItems === 'string') {
+            try { finalItems = JSON.parse(rawItems); } catch (e) { finalItems = []; }
+          }
+
           return {
             ...base,
             orderId: id,
             status: safeStatus,
             date: safeDate,
+            items: finalItems // Store the clean array directly
           };
         }).filter(Boolean);
 
@@ -61,11 +73,20 @@ export default function MyOrdersPage() {
 
       } catch (err) {
         console.error("Failed to fetch live status", err);
-        // Fallback
+        // Fallback completely to local storage if API fails
         const localOrders = myOrderIds.map((id: string) => {
           const pendingOrder = localStorage.getItem(`pending_order_${id}`);
           if (!pendingOrder) return null;
-          return JSON.parse(pendingOrder);
+          const parsed = JSON.parse(pendingOrder);
+          
+          let finalItems = [];
+          let rawItems = parsed.items;
+          if (Array.isArray(rawItems)) finalItems = rawItems;
+          else if (typeof rawItems === 'string') {
+            try { finalItems = JSON.parse(rawItems); } catch (e) {}
+          }
+
+          return { ...parsed, items: finalItems };
         }).filter(Boolean);
         setOrders(localOrders);
       } finally {
@@ -75,18 +96,6 @@ export default function MyOrdersPage() {
 
     loadOrders();
   }, []);
-
-  // 1. SAFE HELPER: Guarantees we always get an array to map over
-  const getSafeItems = (itemsData: any) => {
-    if (!itemsData) return [];
-    if (Array.isArray(itemsData)) return itemsData; // It's already an array!
-    try {
-      const parsed = JSON.parse(itemsData); // Try parsing the string
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      return []; // Fallback
-    }
-  };
 
   const formatPrice = (value: any) => {
     let num = Number(value);
@@ -242,21 +251,25 @@ export default function MyOrdersPage() {
                         <div className="p-4 md:p-6">
                           <div className="flex flex-col gap-4 mb-6">
                             
-                            {/* 2. USING THE SAFE HELPER HERE */}
-                            {getSafeItems(order.items).map((item: any, i: number) => (
-                              <div key={i} className="flex items-center gap-4 border-b border-[#2C1A1D]/5 pb-4 last:border-0 last:pb-0">
-                                {item.image && (
-                                  <div className="relative h-16 w-16 shrink-0 rounded-md overflow-hidden border border-[#2C1A1D]/10 bg-[#FBF9F5]">
-                                    <Image src={item.image} alt={item.title} fill className="object-cover" unoptimized={true} />
+                            {/* BULLETPROOF RENDERING OF ITEMS */}
+                            {Array.isArray(order.items) && order.items.length > 0 ? (
+                              order.items.map((item: any, i: number) => (
+                                <div key={i} className="flex items-center gap-4 border-b border-[#2C1A1D]/5 pb-4 last:border-0 last:pb-0">
+                                  {item.image && (
+                                    <div className="relative h-16 w-16 shrink-0 rounded-md overflow-hidden border border-[#2C1A1D]/10 bg-[#FBF9F5]">
+                                      <Image src={item.image} alt={item.title} fill className="object-cover" unoptimized={true} />
+                                    </div>
+                                  )}
+                                  <div className="flex-1">
+                                    <p className="text-[14px] font-bold text-[#2C1A1D]">{item.title}</p>
+                                    <p className="text-[12px] text-[#2C1A1D]/60 mt-1">Size: {item.size} | Qty: {item.qty}</p>
                                   </div>
-                                )}
-                                <div className="flex-1">
-                                  <p className="text-[14px] font-bold text-[#2C1A1D]">{item.title}</p>
-                                  <p className="text-[12px] text-[#2C1A1D]/60 mt-1">Size: {item.size} | Qty: {item.qty}</p>
+                                  <p className="text-[14px] font-bold text-[#2C1A1D]">£{formatPrice(item.price * item.qty)}</p>
                                 </div>
-                                <p className="text-[14px] font-bold text-[#2C1A1D]">£{formatPrice(item.price * item.qty)}</p>
-                              </div>
-                            ))}
+                              ))
+                            ) : (
+                              <p className="text-[13px] text-[#2C1A1D]/50 italic text-center py-4">Item details are loading or were not saved properly.</p>
+                            )}
                           </div>
 
                           <div className="flex flex-col items-end gap-2 border-t border-[#2C1A1D]/10 pt-4 text-[13px] text-[#2C1A1D]/70">
@@ -336,8 +349,7 @@ export default function MyOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {/* 3. USING THE SAFE HELPER HERE */}
-                {getSafeItems(pdfOrder.items).map((item: any, i: number) => (
+                {Array.isArray(pdfOrder.items) && pdfOrder.items.map((item: any, i: number) => (
                   <tr key={i} className="border-b border-[#2C1A1D]/5">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
