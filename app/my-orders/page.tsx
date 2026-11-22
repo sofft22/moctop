@@ -16,7 +16,6 @@ export default function MyOrdersPage() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
-    // Read the order IDs from local storage
     const myOrderIds = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
 
     if (myOrderIds.length === 0) {
@@ -24,7 +23,6 @@ export default function MyOrdersPage() {
       return;
     }
 
-    // Map over the IDs and pull the actual order data from local storage
     const fetchedOrders = myOrderIds.map((id: string) => {
       const pendingOrder = localStorage.getItem(`pending_order_${id}`);
       if (pendingOrder) {
@@ -33,14 +31,13 @@ export default function MyOrdersPage() {
       return null;
     }).filter(Boolean);
 
-    // Normalize the status
     const normalizedOrders = fetchedOrders.map((o: any) => {
       let s = o.status || "Pending";
-      if (s === "Out for Delivery" || s === "Packaged") s = "Shipping";
+      // Map old "Shipping" to "Confirmed" if it happens to exist
+      if (s === "Shipping" || s === "Out for Delivery" || s === "Packaged") s = "Confirmed";
       return { ...o, status: s };
     });
 
-    // Sort newest first
     normalizedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     setOrders(normalizedOrders);
@@ -92,9 +89,10 @@ export default function MyOrdersPage() {
   };
 
   const getStepStatus = (orderStatus: string, stepName: string) => {
-    const statusMap: any = { "Pending": 0, "Shipping": 1, "Delivered": 2 };
+    // UPDATED: Pending -> Confirmed -> Delivered
+    const statusMap: any = { "Pending": 0, "Confirmed": 1, "Delivered": 2 };
     const currentLevel = statusMap[orderStatus] || 0;
-    const stepLevel = ["Pending", "Shipping", "Delivered"].indexOf(stepName);
+    const stepLevel = ["Pending", "Confirmed", "Delivered"].indexOf(stepName);
     
     if (stepLevel < currentLevel) return "completed";
     if (stepLevel === currentLevel) return "active";
@@ -150,7 +148,7 @@ export default function MyOrdersPage() {
                     <div className="flex items-center gap-4">
                       <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                         order.status === "Delivered" ? "bg-green-100 text-green-700" :
-                        order.status === "Shipping" ? "bg-blue-100 text-blue-700" :
+                        order.status === "Confirmed" ? "bg-blue-100 text-blue-700" :
                         "bg-[#EBE0D3] text-[#2C1A1D]"
                       }`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                         {order.status}
@@ -169,7 +167,8 @@ export default function MyOrdersPage() {
                         <div className="relative flex justify-between">
                           <div className="absolute top-[14px] left-4 right-4 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
                           
-                          {["Pending", "Shipping", "Delivered"].map((step) => {
+                          {/* UPDATED STEPS HERE */}
+                          {["Pending", "Confirmed", "Delivered"].map((step) => {
                             const status = getStepStatus(order.status, step);
                             const isActive = status === "active" || status === "completed";
                             
@@ -291,7 +290,7 @@ export default function MyOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {Array.isArray(pdfOrder.items) ? pdfOrder.items.map((item: any, i: number) => (
+                {(Array.isArray(pdfOrder.items) ? pdfOrder.items : JSON.parse(pdfOrder.items || "[]")).map((item: any, i: number) => (
                   <tr key={i} className="border-b border-[#2C1A1D]/5">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
@@ -307,7 +306,7 @@ export default function MyOrdersPage() {
                     <td className="text-center py-4 text-[14px] font-medium text-[#2C1A1D]/70">{item.qty}</td>
                     <td className="text-right py-4 text-[15px] font-bold text-[#2C1A1D]">£{Number(item.price * item.qty).toFixed(2)}</td>
                   </tr>
-                )) : null}
+                ))}
               </tbody>
             </table>
 
