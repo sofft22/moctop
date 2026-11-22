@@ -15,21 +15,26 @@ export default function AdminOrdersPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const loadOrders = async () => {
-    if (localStorage.getItem("mocktopia_admin_logged_in") !== "true") {
+    if (localStorage.getItem("ma_admin_logged_in") !== "true" && localStorage.getItem("mocktopia_admin_logged_in") !== "true") {
       router.push("/admin/login");
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/orders");
-    const data = await res.json();
-    
-    const normalizedData = data.map((o: any) => {
-      let s = o.status || "Pending";
-      if (s === "Out for Delivery" || s === "Packaged") s = "Shipping";
-      return { ...o, status: s };
-    });
-    
-    setOrders(normalizedData);
+    try {
+      const res = await fetch("/api/orders");
+      const data = await res.json();
+      
+      const normalizedData = data.map((o: any) => {
+        let s = o.status || "Pending";
+        // If old orders are marked as Shipping, we map them to Confirmed
+        if (s === "Shipping" || s === "Out for Delivery" || s === "Packaged") s = "Confirmed";
+        return { ...o, status: s };
+      });
+      
+      setOrders(normalizedData);
+    } catch (error) {
+      console.error("Failed to load orders", error);
+    }
     setLoading(false);
   };
 
@@ -63,13 +68,13 @@ export default function AdminOrdersPage() {
   }, [orders, activeTab]);
 
   const pendingCount = orders.filter(o => o.status === "Pending").length;
-  const shippingCount = orders.filter(o => o.status === "Shipping").length;
+  const confirmedCount = orders.filter(o => o.status === "Confirmed").length;
   const deliveredCount = orders.filter(o => o.status === "Delivered").length;
 
   const getStepStatus = (currentStatus: string, stepName: string) => {
-    const statusMap: any = { "Pending": 0, "Shipping": 1, "Delivered": 2 };
+    const statusMap: any = { "Pending": 0, "Confirmed": 1, "Delivered": 2 };
     const currentLevel = statusMap[currentStatus] || 0;
-    const stepLevel = ["Pending", "Shipping", "Delivered"].indexOf(stepName);
+    const stepLevel = ["Pending", "Confirmed", "Delivered"].indexOf(stepName);
     
     if (stepLevel < currentLevel) return "completed";
     if (stepLevel === currentLevel) return "active";
@@ -89,7 +94,7 @@ export default function AdminOrdersPage() {
         {[
           { id: "all", label: "All Orders", count: orders.length },
           { id: "Pending", label: "Pending", count: pendingCount },
-          { id: "Shipping", label: "Shipping", count: shippingCount },
+          { id: "Confirmed", label: "Confirmed", count: confirmedCount },
           { id: "Delivered", label: "Delivered", count: deliveredCount },
         ].map((tab) => (
           <button 
@@ -130,7 +135,7 @@ export default function AdminOrdersPage() {
                 <div className="w-[90px] md:w-[120px] shrink-0 text-center md:text-left">
                   <span className={`inline-block w-full text-center rounded-md border px-2 py-1 text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${
                     o.status === "Delivered" ? "border-green-200 bg-green-50 text-green-700" :
-                    o.status === "Shipping" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                    o.status === "Confirmed" ? "border-blue-200 bg-blue-50 text-blue-700" :
                     "border-[#2C1A1D]/20 bg-[#EBE0D3] text-[#2C1A1D]"
                   }`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                     {o.status || "Pending"}
@@ -138,7 +143,7 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <div className="w-[70px] md:w-[100px] shrink-0 text-right">
-                  <p className="text-[13px] md:text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{(o.total / 100).toFixed(2)}</p>
+                  <p className="text-[13px] md:text-[14px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>£{Number(o.total).toFixed(2)}</p>
                 </div>
               </button>
 
@@ -171,7 +176,7 @@ export default function AdminOrdersPage() {
                 <div className="relative flex justify-between">
                   <div className="absolute top-[14px] left-4 right-4 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
                   
-                  {["Pending", "Shipping", "Delivered"].map((step) => {
+                  {["Pending", "Confirmed", "Delivered"].map((step) => {
                     const status = getStepStatus(newStatus || selectedOrder.status || "Pending", step);
                     const isActive = status === "active" || status === "completed";
                     
@@ -211,7 +216,7 @@ export default function AdminOrdersPage() {
                       className="w-full rounded-md border border-[#2C1A1D]/20 bg-white px-4 py-3 text-[13px] font-bold uppercase tracking-wider outline-none focus:border-[#2C1A1D] transition-colors"
                     >
                       <option value="Pending">Pending</option>
-                      <option value="Shipping">Shipping</option>
+                      <option value="Confirmed">Confirmed</option>
                       <option value="Delivered">Delivered</option>
                     </select>
                   </div>
@@ -220,50 +225,37 @@ export default function AdminOrdersPage() {
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Items Ordered</h4>
                   <div className="bg-white rounded-lg border border-[#2C1A1D]/10 overflow-hidden shadow-sm">
-                    {JSON.parse(selectedOrder.items).map((item: any, i: number) => (
+                    {/* SAFE PARSING FOR ITEMS */}
+                    {(Array.isArray(selectedOrder.items) ? selectedOrder.items : JSON.parse(selectedOrder.items || "[]")).map((item: any, i: number) => (
                       <div key={i} className="flex items-center gap-3 p-4 border-b border-[#2C1A1D]/5 last:border-0">
                         {item.image && (
                           <div className="relative h-12 w-12 shrink-0 rounded bg-[#EBE0D3] overflow-hidden">
-                            <Image src={item.image} alt={item.title} fill className="object-cover" />
+                            <Image src={item.image} alt={item.title} fill className="object-cover" unoptimized={true} />
                           </div>
                         )}
                         <div className="flex-1">
                           <p className="text-[13px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>{item.title}</p>
                           <p className="text-[11px] text-[#2C1A1D]/50">Size: {item.size} | Qty: {item.qty}</p>
                         </div>
-                        <p className="text-[13px] font-bold text-[#2C1A1D]">£{((item.price * item.qty) / 100).toFixed(2)}</p>
+                        <p className="text-[13px] font-bold text-[#2C1A1D]">£{Number(item.price * item.qty).toFixed(2)}</p>
                       </div>
                     ))}
                     
                     <div className="p-4 bg-[#FBF9F5] border-t border-[#2C1A1D]/10 flex flex-col gap-2">
                       <div className="flex justify-between text-[12px] text-[#2C1A1D]/60">
-                        <span>Subtotal</span><span>£{(selectedOrder.subtotal / 100).toFixed(2)}</span>
+                        <span>Subtotal</span><span>£{Number(selectedOrder.subtotal || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-[12px] text-[#2C1A1D]/60">
-                        <span>Delivery</span><span>£{(selectedOrder.deliveryFee / 100).toFixed(2)}</span>
+                        <span>Delivery</span><span>£{Number(selectedOrder.deliveryFee || 0).toFixed(2)}</span>
                       </div>
                       {selectedOrder.discountAmount > 0 && (
                         <div className="flex justify-between text-[12px] text-green-600 font-bold">
-                          <span>Discount</span><span>-£{(selectedOrder.discountAmount / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                      
-                      {/* PROCESSING FEE */}
-                      {selectedOrder.processingFee > 0 && (
-                        <div className="flex justify-between text-[12px] text-[#2C1A1D]/60">
-                          <span>Processing Fee</span>
-                          <span>£{(selectedOrder.processingFee / 100).toFixed(2)}</span>
+                          <span>Discount</span><span>-£{Number(selectedOrder.discountAmount).toFixed(2)}</span>
                         </div>
                       )}
 
                       <div className="flex justify-between text-[15px] font-bold text-[#2C1A1D] border-t border-[#2C1A1D]/10 pt-2 mt-1">
-                        <span>Total Paid</span><span>£{(selectedOrder.total / 100).toFixed(2)}</span>
-                      </div>
-
-                      {/* NET PAYOUT */}
-                      <div className="flex justify-between text-[12px] font-bold text-green-700 mt-1 bg-green-50 p-2 rounded">
-                        <span>Net Payout (After Fee)</span>
-                        <span>£{((selectedOrder.total - selectedOrder.processingFee) / 100).toFixed(2)}</span>
+                        <span>Total</span><span>£{Number(selectedOrder.total || 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
