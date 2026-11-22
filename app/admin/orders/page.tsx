@@ -80,6 +80,18 @@ export default function AdminOrdersPage() {
     return "inactive";
   };
 
+  // SAFE HELPER FUNCTION TO PREVENT .MAP CRASHES
+  const getSafeItems = (itemsData: any) => {
+    if (!itemsData) return [];
+    if (Array.isArray(itemsData)) return itemsData; // If it's already an array, use it
+    try {
+      const parsed = JSON.parse(itemsData); // Try to parse it if it's a string
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return []; // If it fails, return empty array to prevent crash
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 min-h-screen bg-[#FBF9F5] relative">
       
@@ -224,8 +236,9 @@ export default function AdminOrdersPage() {
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Items Ordered</h4>
                   <div className="bg-white rounded-lg border border-[#2C1A1D]/10 overflow-hidden shadow-sm">
-                    {/* FIX: Check if it's an array before mapping, otherwise parse the string */}
-                    {(Array.isArray(selectedOrder.items) ? selectedOrder.items : JSON.parse(selectedOrder.items || "[]")).map((item: any, i: number) => (
+                    
+                    {/* THE FIX: Using getSafeItems here */}
+                    {getSafeItems(selectedOrder.items).map((item: any, i: number) => (
                       <div key={i} className="flex items-center gap-3 p-4 border-b border-[#2C1A1D]/5 last:border-0">
                         {item.image && (
                           <div className="relative h-12 w-12 shrink-0 rounded bg-[#EBE0D3] overflow-hidden">
