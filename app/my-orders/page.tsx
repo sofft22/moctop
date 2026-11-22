@@ -35,7 +35,6 @@ export default function MyOrdersPage() {
 
           if (!dbOrder && !localOrder) return null;
 
-          // Prioritize the database order if it exists (so status is updated), fallback to local
           const base = dbOrder || localOrder;
           
           let safeStatus = base.status || "Pending";
@@ -47,14 +46,23 @@ export default function MyOrdersPage() {
             ? base.date 
             : new Date().toISOString();
 
-          // BULLETPROOF ITEMS EXTRACTION
+          // ULTIMATE BULLETPROOF ITEMS EXTRACTION
           let finalItems = [];
-          let rawItems = base.items || (localOrder ? localOrder.items : null);
+          let rawItems = base.items;
           
-          if (Array.isArray(rawItems)) {
-            finalItems = rawItems;
-          } else if (typeof rawItems === 'string') {
-            try { finalItems = JSON.parse(rawItems); } catch (e) { finalItems = []; }
+          if (rawItems) {
+            if (Array.isArray(rawItems)) {
+              finalItems = rawItems;
+            } else if (typeof rawItems === 'string') {
+              try {
+                let parsed = JSON.parse(rawItems);
+                // If it parsed to a string again (double stringified), parse again
+                if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                if (Array.isArray(parsed)) finalItems = parsed;
+              } catch (e) {
+                console.error("Failed to parse items string:", e);
+              }
+            }
           }
 
           return {
@@ -62,7 +70,7 @@ export default function MyOrdersPage() {
             orderId: id,
             status: safeStatus,
             date: safeDate,
-            items: finalItems // Store the clean array directly
+            items: finalItems 
           };
         }).filter(Boolean);
 
@@ -73,17 +81,20 @@ export default function MyOrdersPage() {
 
       } catch (err) {
         console.error("Failed to fetch live status", err);
-        // Fallback completely to local storage if API fails
+        // Fallback
         const localOrders = myOrderIds.map((id: string) => {
           const pendingOrder = localStorage.getItem(`pending_order_${id}`);
           if (!pendingOrder) return null;
           const parsed = JSON.parse(pendingOrder);
           
           let finalItems = [];
-          let rawItems = parsed.items;
-          if (Array.isArray(rawItems)) finalItems = rawItems;
-          else if (typeof rawItems === 'string') {
-            try { finalItems = JSON.parse(rawItems); } catch (e) {}
+          if (Array.isArray(parsed.items)) finalItems = parsed.items;
+          else if (typeof parsed.items === 'string') {
+            try { 
+              let p = JSON.parse(parsed.items);
+              if (typeof p === 'string') p = JSON.parse(p);
+              if (Array.isArray(p)) finalItems = p;
+            } catch (e) {}
           }
 
           return { ...parsed, items: finalItems };
@@ -251,8 +262,8 @@ export default function MyOrdersPage() {
                         <div className="p-4 md:p-6">
                           <div className="flex flex-col gap-4 mb-6">
                             
-                            {/* BULLETPROOF RENDERING OF ITEMS */}
-                            {Array.isArray(order.items) && order.items.length > 0 ? (
+                            {/* RENDERING THE CLEAN ITEMS */}
+                            {order.items && order.items.length > 0 ? (
                               order.items.map((item: any, i: number) => (
                                 <div key={i} className="flex items-center gap-4 border-b border-[#2C1A1D]/5 pb-4 last:border-0 last:pb-0">
                                   {item.image && (
@@ -349,7 +360,7 @@ export default function MyOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {Array.isArray(pdfOrder.items) && pdfOrder.items.map((item: any, i: number) => (
+                {pdfOrder.items && pdfOrder.items.map((item: any, i: number) => (
                   <tr key={i} className="border-b border-[#2C1A1D]/5">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
