@@ -16,67 +16,85 @@ export default function MyOrdersPage() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
-    const myOrderIds = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
+    const loadOrders = async () => {
+      const myOrderIds = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
 
-    if (myOrderIds.length === 0) {
-      setLoading(false);
-      return;
-    }
+      if (myOrderIds.length === 0) {
+        setLoading(false);
+        return;
+      }
 
-    // 1. Fetch the LATEST orders from the database (Admin updates)
-    fetch("/api/orders")
-      .then(res => res.json())
-      .then(data => {
-        // 2. Get the local orders (just in case they are offline)
-        const localOrders = myOrderIds.map((id: string) => {
-          const pendingOrder = localStorage.getItem(`pending_order_${id}`);
-          return pendingOrder ? JSON.parse(pendingOrder) : null;
-        }).filter(Boolean);
+      try {
+        // Fetch from database to get the LIVE status updates
+        const res = await fetch("/api/orders");
+        const dbOrders = await res.json();
 
-        // 3. Merge them: Use the Database status, but keep the Local items/details
-        const combinedOrders = myOrderIds.map((id: string) => {
-          const dbOrder = data.find((o: any) => o.id === id || o.orderId === id);
-          const localOrder = localOrders.find((o: any) => o.orderId === id);
+        // Build the final list safely
+        const finalOrders = myOrderIds.map((id: string) => {
+          const dbOrder = Array.isArray(dbOrders) ? dbOrders.find((o: any) => o.id === id || o.orderId === id) : null;
+          const localOrderStr = localStorage.getItem(`pending_order_${id}`);
+          const localOrder = localOrderStr ? JSON.parse(localOrderStr) : null;
 
+          // If it doesn't exist locally or in DB, skip it
           if (!dbOrder && !localOrder) return null;
 
-          const finalOrder = dbOrder || localOrder;
-          const safeDate = finalOrder.date && !isNaN(new Date(finalOrder.date).getTime()) 
-            ? finalOrder.date 
+          // Merge them: Use DB status, but local items/details
+          const base = dbOrder || localOrder;
+          
+          let safeStatus = base.status || "Pending";
+          if (safeStatus === "Shipping" || safeStatus === "Out for Delivery" || safeStatus === "Packaged") {
+            safeStatus = "Confirmed";
+          }
+
+          const safeDate = base.date && !isNaN(new Date(base.date).getTime()) 
+            ? base.date 
             : new Date().toISOString();
 
-          return { 
-            ...finalOrder, 
-            orderId: id, // Ensure ID matches
+          // Ensure items is ALWAYS an array
+          let safeItems = [];
+          if (Array.isArray(base.items)) {
+            safeItems = base.items;
+          } else if (typeof base.items === 'string') {
+            try { safeItems = JSON.parse(base.items); } catch (e) { safeItems = []; }
+          }
+
+          return {
+            ...base,
+            orderId: id,
+            status: safeStatus,
             date: safeDate,
-            // Always prioritize the database status if it exists
-            status: dbOrder ? (dbOrder.status || "Pending") : (localOrder.status || "Pending") 
+            items: safeItems // Guaranteed to be an array now
           };
         }).filter(Boolean);
 
-        // Map old "Shipping" to "Confirmed"
-        const normalized = combinedOrders.map((o: any) => {
-          let s = o.status;
-          if (s === "Shipping" || s === "Out for Delivery" || s === "Packaged") s = "Confirmed";
-          return { ...o, status: s };
-        });
-
-        normalized.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        finalOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
-        setOrders(normalized);
-        setLoading(false);
-        if (normalized.length > 0) setExpandedOrder(normalized[0].orderId);
-      })
-      .catch(err => {
-        console.error("Failed to fetch live status", err);
-        // Fallback to local storage if API fails
+        setOrders(finalOrders);
+        if (finalOrders.length > 0) setExpandedOrder(finalOrders[0].orderId);
+
+      } catch (err) {
+        console.error("Failed to fetch live status, falling back to local storage", err);
+        // Fallback if API fails
         const localOrders = myOrderIds.map((id: string) => {
           const pendingOrder = localStorage.getItem(`pending_order_${id}`);
-          return pendingOrder ? JSON.parse(pendingOrder) : null;
+          if (!pendingOrder) return null;
+          const parsed = JSON.parse(pendingOrder);
+          
+          let safeItems = [];
+          if (Array.isArray(parsed.items)) safeItems = parsed.items;
+          else if (typeof parsed.items === 'string') {
+            try { safeItems = JSON.parse(parsed.items); } catch (e) {}
+          }
+
+          return { ...parsed, items: safeItems };
         }).filter(Boolean);
         setOrders(localOrders);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    loadOrders();
   }, []);
 
   const formatPrice = (value: any) => {
@@ -166,7 +184,6 @@ export default function MyOrdersPage() {
           <div className="flex flex-col gap-4">
             {orders.map((order) => {
               const isExpanded = expandedOrder === order.orderId;
-              const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || "[]");
               
               return (
                 <div key={order.orderId} className="bg-white rounded-xl border border-[#2C1A1D]/10 shadow-sm overflow-hidden">
@@ -233,7 +250,9 @@ export default function MyOrdersPage() {
                         
                         <div className="p-4 md:p-6">
                           <div className="flex flex-col gap-4 mb-6">
-                            {items.map((item: any, i: number) => (
+                            
+                            {/* SAFE MAP BECAUSE WE FORCED IT TO BE AN ARRAY */}
+                            {order.items.map((item: any, i: number) => (
                               <div key={i} className="flex items-center gap-4 border-b border-[#2C1A1D]/5 pb-4 last:border-0 last:pb-0">
                                 {item.image && (
                                   <div className="relative h-16 w-16 shrink-0 rounded-md overflow-hidden border border-[#2C1A1D]/10 bg-[#FBF9F5]">
@@ -326,7 +345,7 @@ export default function MyOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {(Array.isArray(pdfOrder.items) ? pdfOrder.items : JSON.parse(pdfOrder.items || "[]")).map((item: any, i: number) => (
+                {pdfOrder.items.map((item: any, i: number) => (
                   <tr key={i} className="border-b border-[#2C1A1D]/5">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
