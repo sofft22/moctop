@@ -33,9 +33,14 @@ export default function MyOrdersPage() {
 
     const normalizedOrders = fetchedOrders.map((o: any) => {
       let s = o.status || "Pending";
-      // Map old "Shipping" to "Confirmed" if it happens to exist
       if (s === "Shipping" || s === "Out for Delivery" || s === "Packaged") s = "Confirmed";
-      return { ...o, status: s };
+      
+      // Date fallback fix
+      const safeDate = o.date && !isNaN(new Date(o.date).getTime()) 
+        ? o.date 
+        : new Date().toISOString();
+
+      return { ...o, status: s, date: safeDate };
     });
 
     normalizedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -47,6 +52,17 @@ export default function MyOrdersPage() {
       setExpandedOrder(normalizedOrders[0].orderId);
     }
   }, []);
+
+  // Helper function to fix the £2507 issue dynamically
+  const formatPrice = (value: any) => {
+    let num = Number(value);
+    if (isNaN(num)) return "0.00";
+    // If the number is huge (e.g., 2507), it's likely in pence and needs dividing
+    if (num >= 1000 && num % 1 === 0) {
+      return (num / 100).toFixed(2);
+    }
+    return num.toFixed(2);
+  };
 
   const handleDownloadReceipt = async (order: any) => {
     setPdfOrder(order);
@@ -89,7 +105,6 @@ export default function MyOrdersPage() {
   };
 
   const getStepStatus = (orderStatus: string, stepName: string) => {
-    // UPDATED: Pending -> Confirmed -> Delivered
     const statusMap: any = { "Pending": 0, "Confirmed": 1, "Delivered": 2 };
     const currentLevel = statusMap[orderStatus] || 0;
     const stepLevel = ["Pending", "Confirmed", "Delivered"].indexOf(stepName);
@@ -143,7 +158,7 @@ export default function MyOrdersPage() {
                       <p className="text-[12px] text-[#2C1A1D]/60 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
                         {new Date(order.date).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}
                       </p>
-                      <p className="text-[14px] font-bold text-[#2C1A1D] mt-2">£{Number(order.total).toFixed(2)}</p>
+                      <p className="text-[14px] font-bold text-[#2C1A1D] mt-2">£{formatPrice(order.total)}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
@@ -167,7 +182,6 @@ export default function MyOrdersPage() {
                         <div className="relative flex justify-between">
                           <div className="absolute top-[14px] left-4 right-4 h-[2px] bg-[#EBE0D3] -translate-y-1/2 z-0" />
                           
-                          {/* UPDATED STEPS HERE */}
                           {["Pending", "Confirmed", "Delivered"].map((step) => {
                             const status = getStepStatus(order.status, step);
                             const isActive = status === "active" || status === "completed";
@@ -208,23 +222,23 @@ export default function MyOrdersPage() {
                                   <p className="text-[14px] font-bold text-[#2C1A1D]">{item.title}</p>
                                   <p className="text-[12px] text-[#2C1A1D]/60 mt-1">Size: {item.size} | Qty: {item.qty}</p>
                                 </div>
-                                <p className="text-[14px] font-bold text-[#2C1A1D]">£{Number(item.price * item.qty).toFixed(2)}</p>
+                                <p className="text-[14px] font-bold text-[#2C1A1D]">£{formatPrice(item.price * item.qty)}</p>
                               </div>
                             ))}
                           </div>
 
                           <div className="flex flex-col items-end gap-2 border-t border-[#2C1A1D]/10 pt-4 text-[13px] text-[#2C1A1D]/70">
-                            <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{Number(order.subtotal || 0).toFixed(2)}</span></div>
-                            <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{Number(order.deliveryFee || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{formatPrice(order.subtotal || 0)}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{formatPrice(order.deliveryFee || 0)}</span></div>
                             
                             {order.discountAmount > 0 && (
                               <div className="flex justify-between w-full max-w-[200px] text-green-600 font-bold">
                                 <span>Discount {order.promoCode ? `(${order.promoCode})` : ""}:</span>
-                                <span>-£{Number(order.discountAmount).toFixed(2)}</span>
+                                <span>-£{formatPrice(order.discountAmount)}</span>
                               </div>
                             )}
 
-                            <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2"><span>Total:</span><span>£{Number(order.total || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2"><span>Total:</span><span>£{formatPrice(order.total || 0)}</span></div>
                           </div>
                         </div>
                       </div>
@@ -304,24 +318,24 @@ export default function MyOrdersPage() {
                     </td>
                     <td className="text-center py-4 text-[14px] font-medium text-[#2C1A1D]/70">{item.size}</td>
                     <td className="text-center py-4 text-[14px] font-medium text-[#2C1A1D]/70">{item.qty}</td>
-                    <td className="text-right py-4 text-[15px] font-bold text-[#2C1A1D]">£{Number(item.price * item.qty).toFixed(2)}</td>
+                    <td className="text-right py-4 text-[15px] font-bold text-[#2C1A1D]">£{formatPrice(item.price * item.qty)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
             <div className="flex flex-col items-end gap-3 border-t-2 border-[#2C1A1D]/10 pt-4 mb-10">
-              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{Number(pdfOrder.subtotal || 0).toFixed(2)}</span></div>
-              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{Number(pdfOrder.deliveryFee || 0).toFixed(2)}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{formatPrice(pdfOrder.subtotal || 0)}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{formatPrice(pdfOrder.deliveryFee || 0)}</span></div>
               
               {pdfOrder.discountAmount > 0 && (
                 <div className="flex justify-between w-full max-w-[300px] text-[14px] text-green-600 font-bold">
                   <span>Discount {pdfOrder.promoCode ? `(${pdfOrder.promoCode})` : ""}:</span>
-                  <span>-£{Number(pdfOrder.discountAmount).toFixed(2)}</span>
+                  <span>-£{formatPrice(pdfOrder.discountAmount)}</span>
                 </div>
               )}
 
-              <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{Number(pdfOrder.total || 0).toFixed(2)}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{formatPrice(pdfOrder.total || 0)}</span></div>
             </div>
 
             <div className="text-center text-[12px] text-[#2C1A1D]/50 border-t border-[#2C1A1D]/10 pt-6">
