@@ -26,7 +26,6 @@ export default function AdminOrdersPage() {
       
       const normalizedData = data.map((o: any) => {
         let s = o.status || "Pending";
-        // If old orders are marked as Shipping, we map them to Confirmed
         if (s === "Shipping" || s === "Out for Delivery" || s === "Packaged") s = "Confirmed";
         return { ...o, status: s };
       });
@@ -225,7 +224,7 @@ export default function AdminOrdersPage() {
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D]/50 mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Items Ordered</h4>
                   <div className="bg-white rounded-lg border border-[#2C1A1D]/10 overflow-hidden shadow-sm">
-                    {/* SAFE PARSING FOR ITEMS */}
+                    {/* FIX: Check if it's an array before mapping, otherwise parse the string */}
                     {(Array.isArray(selectedOrder.items) ? selectedOrder.items : JSON.parse(selectedOrder.items || "[]")).map((item: any, i: number) => (
                       <div key={i} className="flex items-center gap-3 p-4 border-b border-[#2C1A1D]/5 last:border-0">
                         {item.image && (
