@@ -16,6 +16,7 @@ export default function MyOrdersPage() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
+    // Read the order IDs from local storage
     const myOrderIds = JSON.parse(localStorage.getItem("mocktopia_my_orders") || "[]");
 
     if (myOrderIds.length === 0) {
@@ -23,27 +24,31 @@ export default function MyOrdersPage() {
       return;
     }
 
-    fetch("/api/orders")
-      .then(res => res.json())
-      .then(data => {
-        const myOrders = data.filter((order: any) => myOrderIds.includes(order.id));
-        
-        const normalizedOrders = myOrders.map((o: any) => {
-          let s = o.status || "Pending";
-          if (s === "Out for Delivery" || s === "Packaged") s = "Shipping";
-          return { ...o, status: s };
-        });
+    // Map over the IDs and pull the actual order data from local storage
+    const fetchedOrders = myOrderIds.map((id: string) => {
+      const pendingOrder = localStorage.getItem(`pending_order_${id}`);
+      if (pendingOrder) {
+        return JSON.parse(pendingOrder);
+      }
+      return null;
+    }).filter(Boolean);
 
-        normalizedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        
-        setOrders(normalizedOrders);
-        setLoading(false);
-        
-        if (normalizedOrders.length > 0) {
-          setExpandedOrder(normalizedOrders[0].id);
-        }
-      })
-      .catch(() => setLoading(false));
+    // Normalize the status
+    const normalizedOrders = fetchedOrders.map((o: any) => {
+      let s = o.status || "Pending";
+      if (s === "Out for Delivery" || s === "Packaged") s = "Shipping";
+      return { ...o, status: s };
+    });
+
+    // Sort newest first
+    normalizedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    setOrders(normalizedOrders);
+    setLoading(false);
+    
+    if (normalizedOrders.length > 0) {
+      setExpandedOrder(normalizedOrders[0].orderId);
+    }
   }, []);
 
   const handleDownloadReceipt = async (order: any) => {
@@ -75,7 +80,7 @@ export default function MyOrdersPage() {
         });
 
         pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Mocktopia_Receipt_${order.id}.pdf`);
+        pdf.save(`Mocktopia_Receipt_${order.orderId}.pdf`);
       } catch (error) {
         console.error("Failed to generate PDF", error);
         alert("There was an error downloading your receipt.");
@@ -125,22 +130,22 @@ export default function MyOrdersPage() {
         ) : (
           <div className="flex flex-col gap-4">
             {orders.map((order) => {
-              const isExpanded = expandedOrder === order.id;
-              const items = JSON.parse(order.items);
+              const isExpanded = expandedOrder === order.orderId;
+              const items = Array.isArray(order.items) ? order.items : JSON.parse(order.items || "[]");
               
               return (
-                <div key={order.id} className="bg-white rounded-xl border border-[#2C1A1D]/10 shadow-sm overflow-hidden">
+                <div key={order.orderId} className="bg-white rounded-xl border border-[#2C1A1D]/10 shadow-sm overflow-hidden">
                   
                   <button 
-                    onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                    onClick={() => setExpandedOrder(isExpanded ? null : order.orderId)}
                     className="w-full flex items-center justify-between p-6 text-left hover:bg-[#FBF9F5] transition-colors"
                   >
                     <div>
-                      <p className="text-[16px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{order.id}</p>
+                      <p className="text-[16px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{order.orderId}</p>
                       <p className="text-[12px] text-[#2C1A1D]/60 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
                         {new Date(order.date).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" })}
                       </p>
-                      <p className="text-[14px] font-bold text-[#2C1A1D] mt-2">£{(order.total / 100).toFixed(2)}</p>
+                      <p className="text-[14px] font-bold text-[#2C1A1D] mt-2">£{Number(order.total).toFixed(2)}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
@@ -204,31 +209,23 @@ export default function MyOrdersPage() {
                                   <p className="text-[14px] font-bold text-[#2C1A1D]">{item.title}</p>
                                   <p className="text-[12px] text-[#2C1A1D]/60 mt-1">Size: {item.size} | Qty: {item.qty}</p>
                                 </div>
-                                <p className="text-[14px] font-bold text-[#2C1A1D]">£{((item.price * item.qty) / 100).toFixed(2)}</p>
+                                <p className="text-[14px] font-bold text-[#2C1A1D]">£{Number(item.price * item.qty).toFixed(2)}</p>
                               </div>
                             ))}
                           </div>
 
                           <div className="flex flex-col items-end gap-2 border-t border-[#2C1A1D]/10 pt-4 text-[13px] text-[#2C1A1D]/70">
-                            <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{(order.subtotal / 100).toFixed(2)}</span></div>
-                            <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{(order.deliveryFee / 100).toFixed(2)}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px]"><span>Subtotal:</span><span>£{Number(order.subtotal || 0).toFixed(2)}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px]"><span>Delivery:</span><span>£{Number(order.deliveryFee || 0).toFixed(2)}</span></div>
                             
                             {order.discountAmount > 0 && (
                               <div className="flex justify-between w-full max-w-[200px] text-green-600 font-bold">
                                 <span>Discount {order.promoCode ? `(${order.promoCode})` : ""}:</span>
-                                <span>-£{(order.discountAmount / 100).toFixed(2)}</span>
+                                <span>-£{Number(order.discountAmount).toFixed(2)}</span>
                               </div>
                             )}
 
-                            {/* PROCESSING FEE */}
-                            {order.processingFee > 0 && (
-                              <div className="flex justify-between w-full max-w-[200px]">
-                                <span>Processing Fee:</span>
-                                <span>£{(order.processingFee / 100).toFixed(2)}</span>
-                              </div>
-                            )}
-
-                            <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2"><span>Total:</span><span>£{(order.total / 100).toFixed(2)}</span></div>
+                            <div className="flex justify-between w-full max-w-[200px] text-[16px] font-bold text-[#2C1A1D] mt-2"><span>Total:</span><span>£{Number(order.total || 0).toFixed(2)}</span></div>
                           </div>
                         </div>
                       </div>
@@ -236,11 +233,11 @@ export default function MyOrdersPage() {
                       <div className="flex justify-end">
                         <button 
                           onClick={() => handleDownloadReceipt(order)}
-                          disabled={isDownloading && pdfOrder?.id === order.id}
+                          disabled={isDownloading && pdfOrder?.orderId === order.orderId}
                           className="rounded-md border border-[#2C1A1D] px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-[#2C1A1D] hover:bg-[#2C1A1D] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                           style={{ fontFamily: "var(--font-montserrat), sans-serif" }}
                         >
-                          {isDownloading && pdfOrder?.id === order.id ? (
+                          {isDownloading && pdfOrder?.orderId === order.orderId ? (
                             <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...</>
                           ) : ("Download Receipt")}
                         </button>
@@ -264,7 +261,7 @@ export default function MyOrdersPage() {
                 <p className="text-[12px] uppercase tracking-widest text-[#FBF9F5]/70 mt-1">Official Receipt</p>
               </div>
               <div className="text-right text-[13px]">
-                <p><span className="font-bold opacity-70">Receipt No:</span> {pdfOrder.id}</p>
+                <p><span className="font-bold opacity-70">Receipt No:</span> {pdfOrder.orderId}</p>
                 <p><span className="font-bold opacity-70">Date:</span> {new Date(pdfOrder.date).toLocaleDateString()}</p>
                 <p><span className="font-bold opacity-70">Status:</span> {pdfOrder.status || "Pending"}</p>
               </div>
@@ -276,11 +273,11 @@ export default function MyOrdersPage() {
                 <p className="font-bold text-[#2C1A1D] text-[16px]">{pdfOrder.customerName}</p>
                 <p>{pdfOrder.phone}</p>
                 <p className="max-w-[300px]">{pdfOrder.address}</p>
-                {pdfOrder.city && <p>{pdfOrder.city}, {pdfOrder.state}</p>}
+                {pdfOrder.city && <p>{pdfOrder.city}</p>}
               </div>
               <div className="text-right">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-[#2C1A1D]/40 mb-2">Payment Method:</p>
-                <p className="font-bold text-[#2C1A1D] uppercase">{pdfOrder.paymentMethod || "N/A"}</p>
+                <p className="font-bold text-[#2C1A1D] uppercase">{pdfOrder.paymentMethod || "Bank Transfer"}</p>
               </div>
             </div>
 
@@ -294,7 +291,7 @@ export default function MyOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {JSON.parse(pdfOrder.items).map((item: any, i: number) => (
+                {Array.isArray(pdfOrder.items) ? pdfOrder.items.map((item: any, i: number) => (
                   <tr key={i} className="border-b border-[#2C1A1D]/5">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
@@ -308,31 +305,24 @@ export default function MyOrdersPage() {
                     </td>
                     <td className="text-center py-4 text-[14px] font-medium text-[#2C1A1D]/70">{item.size}</td>
                     <td className="text-center py-4 text-[14px] font-medium text-[#2C1A1D]/70">{item.qty}</td>
-                    <td className="text-right py-4 text-[15px] font-bold text-[#2C1A1D]">£{((item.price * item.qty) / 100).toFixed(2)}</td>
+                    <td className="text-right py-4 text-[15px] font-bold text-[#2C1A1D]">£{Number(item.price * item.qty).toFixed(2)}</td>
                   </tr>
-                ))}
+                )) : null}
               </tbody>
             </table>
 
             <div className="flex flex-col items-end gap-3 border-t-2 border-[#2C1A1D]/10 pt-4 mb-10">
-              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{(pdfOrder.subtotal / 100).toFixed(2)}</span></div>
-              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{(pdfOrder.deliveryFee / 100).toFixed(2)}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Subtotal:</span><span>£{Number(pdfOrder.subtotal || 0).toFixed(2)}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70"><span>Delivery Fee:</span><span>£{Number(pdfOrder.deliveryFee || 0).toFixed(2)}</span></div>
               
               {pdfOrder.discountAmount > 0 && (
                 <div className="flex justify-between w-full max-w-[300px] text-[14px] text-green-600 font-bold">
                   <span>Discount {pdfOrder.promoCode ? `(${pdfOrder.promoCode})` : ""}:</span>
-                  <span>-£{(pdfOrder.discountAmount / 100).toFixed(2)}</span>
+                  <span>-£{Number(pdfOrder.discountAmount).toFixed(2)}</span>
                 </div>
               )}
 
-              {pdfOrder.processingFee > 0 && (
-                <div className="flex justify-between w-full max-w-[300px] text-[14px] text-[#2C1A1D]/70">
-                  <span>Processing Fee:</span>
-                  <span>£{(pdfOrder.processingFee / 100).toFixed(2)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{(pdfOrder.total / 100).toFixed(2)}</span></div>
+              <div className="flex justify-between w-full max-w-[300px] text-[20px] font-bold text-[#2C1A1D] mt-2 border-t border-[#2C1A1D]/10 pt-3"><span>Total:</span><span>£{Number(pdfOrder.total || 0).toFixed(2)}</span></div>
             </div>
 
             <div className="text-center text-[12px] text-[#2C1A1D]/50 border-t border-[#2C1A1D]/10 pt-6">
