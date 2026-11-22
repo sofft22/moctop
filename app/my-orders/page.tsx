@@ -23,44 +23,66 @@ export default function MyOrdersPage() {
       return;
     }
 
-    const fetchedOrders = myOrderIds.map((id: string) => {
-      const pendingOrder = localStorage.getItem(`pending_order_${id}`);
-      if (pendingOrder) {
-        return JSON.parse(pendingOrder);
-      }
-      return null;
-    }).filter(Boolean);
+    // 1. Fetch the LATEST orders from the database (Admin updates)
+    fetch("/api/orders")
+      .then(res => res.json())
+      .then(data => {
+        // 2. Get the local orders (just in case they are offline)
+        const localOrders = myOrderIds.map((id: string) => {
+          const pendingOrder = localStorage.getItem(`pending_order_${id}`);
+          return pendingOrder ? JSON.parse(pendingOrder) : null;
+        }).filter(Boolean);
 
-    const normalizedOrders = fetchedOrders.map((o: any) => {
-      let s = o.status || "Pending";
-      if (s === "Shipping" || s === "Out for Delivery" || s === "Packaged") s = "Confirmed";
-      
-      // Date fallback fix
-      const safeDate = o.date && !isNaN(new Date(o.date).getTime()) 
-        ? o.date 
-        : new Date().toISOString();
+        // 3. Merge them: Use the Database status, but keep the Local items/details
+        const combinedOrders = myOrderIds.map((id: string) => {
+          const dbOrder = data.find((o: any) => o.id === id || o.orderId === id);
+          const localOrder = localOrders.find((o: any) => o.orderId === id);
 
-      return { ...o, status: s, date: safeDate };
-    });
+          if (!dbOrder && !localOrder) return null;
 
-    normalizedOrders.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    setOrders(normalizedOrders);
-    setLoading(false);
-    
-    if (normalizedOrders.length > 0) {
-      setExpandedOrder(normalizedOrders[0].orderId);
-    }
+          const finalOrder = dbOrder || localOrder;
+          const safeDate = finalOrder.date && !isNaN(new Date(finalOrder.date).getTime()) 
+            ? finalOrder.date 
+            : new Date().toISOString();
+
+          return { 
+            ...finalOrder, 
+            orderId: id, // Ensure ID matches
+            date: safeDate,
+            // Always prioritize the database status if it exists
+            status: dbOrder ? (dbOrder.status || "Pending") : (localOrder.status || "Pending") 
+          };
+        }).filter(Boolean);
+
+        // Map old "Shipping" to "Confirmed"
+        const normalized = combinedOrders.map((o: any) => {
+          let s = o.status;
+          if (s === "Shipping" || s === "Out for Delivery" || s === "Packaged") s = "Confirmed";
+          return { ...o, status: s };
+        });
+
+        normalized.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        setOrders(normalized);
+        setLoading(false);
+        if (normalized.length > 0) setExpandedOrder(normalized[0].orderId);
+      })
+      .catch(err => {
+        console.error("Failed to fetch live status", err);
+        // Fallback to local storage if API fails
+        const localOrders = myOrderIds.map((id: string) => {
+          const pendingOrder = localStorage.getItem(`pending_order_${id}`);
+          return pendingOrder ? JSON.parse(pendingOrder) : null;
+        }).filter(Boolean);
+        setOrders(localOrders);
+        setLoading(false);
+      });
   }, []);
 
-  // Helper function to fix the £2507 issue dynamically
   const formatPrice = (value: any) => {
     let num = Number(value);
     if (isNaN(num)) return "0.00";
-    // If the number is huge (e.g., 2507), it's likely in pence and needs dividing
-    if (num >= 1000 && num % 1 === 0) {
-      return (num / 100).toFixed(2);
-    }
+    if (num >= 1000 && num % 1 === 0) return (num / 100).toFixed(2);
     return num.toFixed(2);
   };
 
