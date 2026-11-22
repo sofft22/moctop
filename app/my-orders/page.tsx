@@ -25,20 +25,16 @@ export default function MyOrdersPage() {
       }
 
       try {
-        // Fetch from database to get the LIVE status updates
         const res = await fetch("/api/orders");
         const dbOrders = await res.json();
 
-        // Build the final list safely
         const finalOrders = myOrderIds.map((id: string) => {
           const dbOrder = Array.isArray(dbOrders) ? dbOrders.find((o: any) => o.id === id || o.orderId === id) : null;
           const localOrderStr = localStorage.getItem(`pending_order_${id}`);
           const localOrder = localOrderStr ? JSON.parse(localOrderStr) : null;
 
-          // If it doesn't exist locally or in DB, skip it
           if (!dbOrder && !localOrder) return null;
 
-          // Merge them: Use DB status, but local items/details
           const base = dbOrder || localOrder;
           
           let safeStatus = base.status || "Pending";
@@ -50,20 +46,11 @@ export default function MyOrdersPage() {
             ? base.date 
             : new Date().toISOString();
 
-          // Ensure items is ALWAYS an array
-          let safeItems = [];
-          if (Array.isArray(base.items)) {
-            safeItems = base.items;
-          } else if (typeof base.items === 'string') {
-            try { safeItems = JSON.parse(base.items); } catch (e) { safeItems = []; }
-          }
-
           return {
             ...base,
             orderId: id,
             status: safeStatus,
             date: safeDate,
-            items: safeItems // Guaranteed to be an array now
           };
         }).filter(Boolean);
 
@@ -73,20 +60,12 @@ export default function MyOrdersPage() {
         if (finalOrders.length > 0) setExpandedOrder(finalOrders[0].orderId);
 
       } catch (err) {
-        console.error("Failed to fetch live status, falling back to local storage", err);
-        // Fallback if API fails
+        console.error("Failed to fetch live status", err);
+        // Fallback
         const localOrders = myOrderIds.map((id: string) => {
           const pendingOrder = localStorage.getItem(`pending_order_${id}`);
           if (!pendingOrder) return null;
-          const parsed = JSON.parse(pendingOrder);
-          
-          let safeItems = [];
-          if (Array.isArray(parsed.items)) safeItems = parsed.items;
-          else if (typeof parsed.items === 'string') {
-            try { safeItems = JSON.parse(parsed.items); } catch (e) {}
-          }
-
-          return { ...parsed, items: safeItems };
+          return JSON.parse(pendingOrder);
         }).filter(Boolean);
         setOrders(localOrders);
       } finally {
@@ -96,6 +75,18 @@ export default function MyOrdersPage() {
 
     loadOrders();
   }, []);
+
+  // 1. SAFE HELPER: Guarantees we always get an array to map over
+  const getSafeItems = (itemsData: any) => {
+    if (!itemsData) return [];
+    if (Array.isArray(itemsData)) return itemsData; // It's already an array!
+    try {
+      const parsed = JSON.parse(itemsData); // Try parsing the string
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return []; // Fallback
+    }
+  };
 
   const formatPrice = (value: any) => {
     let num = Number(value);
@@ -251,8 +242,8 @@ export default function MyOrdersPage() {
                         <div className="p-4 md:p-6">
                           <div className="flex flex-col gap-4 mb-6">
                             
-                            {/* SAFE MAP BECAUSE WE FORCED IT TO BE AN ARRAY */}
-                            {order.items.map((item: any, i: number) => (
+                            {/* 2. USING THE SAFE HELPER HERE */}
+                            {getSafeItems(order.items).map((item: any, i: number) => (
                               <div key={i} className="flex items-center gap-4 border-b border-[#2C1A1D]/5 pb-4 last:border-0 last:pb-0">
                                 {item.image && (
                                   <div className="relative h-16 w-16 shrink-0 rounded-md overflow-hidden border border-[#2C1A1D]/10 bg-[#FBF9F5]">
@@ -345,7 +336,8 @@ export default function MyOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {pdfOrder.items.map((item: any, i: number) => (
+                {/* 3. USING THE SAFE HELPER HERE */}
+                {getSafeItems(pdfOrder.items).map((item: any, i: number) => (
                   <tr key={i} className="border-b border-[#2C1A1D]/5">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
