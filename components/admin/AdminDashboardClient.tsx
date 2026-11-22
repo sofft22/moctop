@@ -49,27 +49,32 @@ export function AdminDashboardClient() {
         const products = await productsRes.json();
         const promos = await promosRes.json();
 
+        // 1. FILTER: Only count "Confirmed" and "Delivered" orders as revenue
+        const validOrders = orders.filter((o: any) => 
+          o.status === "Confirmed" || o.status === "Delivered" || o.status === "Shipping"
+        );
+
         // Calculate Stats
-        const totalRev = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+        const totalRev = validOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0);
         const pendingOrders = orders.filter((o: any) => o.status === "Pending").length;
         const totalProducts = products.length;
         const activePromos = promos.filter((p: any) => p.isActive === 1).length;
 
         setStats({
           revenue: totalRev,
-          orders: orders.length,
+          orders: validOrders.length, // Only show the count of valid orders
           pendingOrders,
           totalProducts,
           activePromos,
         });
 
-        // Recent Orders (Top 5)
+        // Recent Orders (Top 5 - Show all so you can see pending ones too)
         const sortedOrders = [...orders].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setRecentOrders(sortedOrders.slice(0, 5));
 
-        // Build Chart Data (Last 30 days)
+        // Build Chart Data (Last 30 days) - ONLY from valid orders
         const byDay: Record<string, number> = {};
-        orders.forEach((o: any) => {
+        validOrders.forEach((o: any) => {
           const day = new Date(o.date).toISOString().slice(0, 10);
           byDay[day] = (byDay[day] ?? 0) + o.total;
         });
@@ -127,10 +132,10 @@ export function AdminDashboardClient() {
             Total Revenue
           </p>
           <p className="mt-3 text-[38px] font-semibold leading-none" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            £{stats.revenue.toLocaleString()}
+            £{stats.revenue.toFixed(2)}
           </p>
           <p className="mt-4 text-[13px] text-[#FBF9F5]/80" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-            From {stats.orders} total orders
+            From {stats.orders} confirmed orders
           </p>
         </div>
 
@@ -255,11 +260,11 @@ export function AdminDashboardClient() {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-[13px] font-bold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-                      £{o.total.toLocaleString()}
+                      £{Number(o.total).toFixed(2)}
                     </span>
                     <span className={`rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${
                       o.status === "Delivered" ? "bg-green-100 text-green-700" : 
-                      o.status === "Shipping" ? "bg-blue-100 text-blue-700" :
+                      o.status === "Confirmed" ? "bg-blue-100 text-blue-700" :
                       "bg-[#EBE0D3] text-[#2C1A1D]"
                     }`} style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
                       {o.status || "Pending"}
