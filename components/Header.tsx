@@ -21,18 +21,13 @@ export function Header() {
   const [desktopCategoriesOpen, setDesktopCategoriesOpen] = useState(false); 
   
   const [scrolled, setScrolled] = useState(0);
-  const [hidden, setHidden] = useState(false);
   const [heroHeight, setHeroHeight] = useState(0); 
 
   const [bannerText, setBannerText] = useState("");
   const [bannerActive, setBannerActive] = useState(false);
   const [isBannerClosed, setIsBannerClosed] = useState(false);
 
-  const lastY = useRef(0);
   const ticking = useRef(false);
-
-  const HIDE_AFTER = 50;
-  const TOLERANCE = 5;
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -68,24 +63,13 @@ export function Header() {
     return () => window.removeEventListener('resize', measure);
   }, [pathname]);
 
+  // 🟢 STICKY LOGIC: Just track scroll position, no hiding
   useEffect(() => {
     const onScroll = () => {
       if (ticking.current) return;
       ticking.current = true;
       requestAnimationFrame(() => {
-        const y = window.scrollY;
-        const prev = lastY.current;
-        const diff = y - prev;
-
-        setScrolled(y);
-
-        if (y > HIDE_AFTER && diff > TOLERANCE) {
-          setHidden(true);
-        } else if (diff < -TOLERANCE || y <= HIDE_AFTER) {
-          setHidden(false);
-        }
-
-        lastY.current = y;
+        setScrolled(window.scrollY);
         ticking.current = false;
       });
     };
@@ -93,6 +77,7 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Determine if we are over the hero area
   const overHero = heroHeight > 0 && scrolled < heroHeight - 40; 
   const textClass = overHero ? 'text-white' : 'text-[#2C1A1D]';
 
@@ -142,9 +127,7 @@ export function Header() {
   return (
     <>
       <header
-        className={`fixed left-0 right-0 top-0 z-40 transition-[background-color,border-color,transform,color] duration-300 ease-out flex flex-col ${
-          hidden ? '-translate-y-full' : 'translate-y-0'
-        }`}
+        className={`fixed left-0 right-0 top-0 z-40 flex flex-col transition-[background-color,border-color,color] duration-300 ease-out`}
         style={{
           backgroundColor: overHero ? 'transparent' : '#FBF9F5', 
           borderBottom: overHero ? '1px solid transparent' : '1px solid rgba(44, 26, 29, 0.1)'
