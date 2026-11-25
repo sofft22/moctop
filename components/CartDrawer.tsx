@@ -42,9 +42,18 @@ export function CartDrawer() {
                       <div>
                         <div className="flex justify-between">
                           <h3 className="text-[13px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>{item.title}</h3>
-                          <button onClick={() => removeFromCart(item.cartId)} className="text-[#2C1A1D]/40 hover:text-[#2C1A1D]">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                          
+                          {/* 🔥 CHANGED TO TRASH ICON HERE */}
+                          <button 
+                            onClick={() => removeFromCart(item.cartId)} 
+                            className="text-[#2C1A1D]/40 hover:text-red-500 transition-colors"
+                            aria-label="Remove item"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
                           </button>
+
                         </div>
                         <p className="text-[11px] text-[#2C1A1D]/50 mt-1" style={{ fontFamily: "var(--font-inter), sans-serif" }}>{item.size}</p>
                       </div>
@@ -54,7 +63,6 @@ export function CartDrawer() {
                           <span className="flex h-8 w-10 items-center justify-center text-[12px] font-bold text-[#2C1A1D]">{item.qty}</span>
                           <button onClick={() => updateQty(item.cartId, item.qty + 1)} className="flex h-8 w-8 items-center justify-center text-[#2C1A1D]/60 hover:bg-[#2C1A1D] hover:text-[#FBF9F5]">+</button>
                         </div>
-                        {/* CURRENCY CONVERTED TO £ */}
                         <p className="text-[13px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>£{(itemPrice * item.qty).toLocaleString()}</p>
                       </div>
                     </div>
@@ -70,7 +78,6 @@ export function CartDrawer() {
           <div className="border-t border-[#2C1A1D]/10 px-6 py-6 flex flex-col gap-3">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#2C1A1D]" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>Subtotal</span>
-              {/* CURRENCY CONVERTED TO £ */}
               <span className="text-[18px] font-semibold text-[#2C1A1D]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>£{cartTotal.toLocaleString()}</span>
             </div>
             
